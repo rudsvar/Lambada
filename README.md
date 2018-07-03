@@ -16,6 +16,7 @@ five = 5
 main = double five
 ```
 
+Basic boolean logic implementation.
 ```
 true = \x . \y . x
 false = \x . \y . y

@@ -9,21 +9,21 @@ The language attempts to be minimalistic, and implements as much as possible wit
 
 Values, lambda expressions, and application.
 
-'''haskell
+```haskell
 double = \x -> * 2 x
 
 five = 5
 
 main = double five
-'''
+```
 
-'''haskell
-true = \x -> \y -> 
+```haskell
+true = \x -> \y -> x
+false = \x -> \y -> y
+if = \p -> \x -> p x
 
-five = 5
-
-main = double five
-'''
+main = if true 1 0
+```
 
 ## Features
 

@@ -9,18 +9,18 @@ The language attempts to be minimalistic, and implements as much as possible wit
 
 Values, lambda expressions, and application.
 
-```haskell
-double = \x -> * 2 x
+```
+double = \x . * 2 x
 
 five = 5
 
 main = double five
 ```
 
-```haskell
-true = \x -> \y -> x
-false = \x -> \y -> y
-if = \p -> \x -> p x
+```
+true = \x . \y . x
+false = \x . \y . y
+if = \p . \x . p x
 
 main = if true 1 0
 ```
@@ -32,6 +32,7 @@ main = if true 1 0
 * Lambda abstractions
 * Application of lambda abstractions on values
 * Evaluation of expressions
+* Lists and tuples, in Lambada or host language?
 
 ## Possible future features
 * A way of printing values?

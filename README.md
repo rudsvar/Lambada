@@ -31,7 +31,8 @@ main = if true 1 0
 * Lambda abstractions
 * Application of lambda abstractions on values
 * Evaluation of expressions
-* Lists and tuples, in Lambada or host language?
+* Data types like lists, tuples and records
+* Type checking
 
 ### Ideas
 * A way of printing values?

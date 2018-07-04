@@ -1,0 +1,74 @@
+import Prelude (
+    (==), (<), (>), (<=), (>=),
+    (+), (-), (*), div, negate,
+    (.), Int)
+
+-- Host Language
+eq = \x -> \y -> if x == y then true else false
+lt, gt :: Int -> Int -> (a -> a -> a)
+lt = \x -> \y -> if x < y then true else false
+gt = \x -> \y -> if x > y then true else false
+
+add, mul :: Int -> Int -> Int
+add = (+)
+mul = (*)
+min = negate
+
+-- Basic
+id = \x -> x
+sub = \x -> \y -> add x (min y)
+inc = \x -> add x 1
+dec = \x -> sub x 1
+
+-- Church Numerals
+zero = \x -> x
+succ = \n -> inc n
+
+-- Boolean Logic
+true = \x -> \y -> x
+false = \x -> \y -> y
+if' = id
+then' = id
+else' = id
+
+and = \f -> \g -> if' f g false
+or = \f -> \g -> if' f true g
+not = \f -> if' f false true
+nand = \f -> \g -> not (and f g)
+nor = \f -> \g -> not (or f g)
+xor = \f -> \g -> if' f (not g) g
+
+-- Lists, tuples
+empty = id
+cons = \x -> \xs -> \n ->
+  if' (eq n 0) x (xs (dec n))
+len = \xs ->
+  sub (min 1) (xs (min 1))
+
+foldr = \f -> \acc -> \xs -> foldr' f acc xs 0
+  where
+    foldr' = \f -> \acc -> \xs -> \n ->
+      if' (eq n (len xs))
+        acc (f (xs n)
+        (foldr' f acc xs (inc n)))
+
+map = \f -> \xs ->
+  foldr (\x -> \acc -> cons (f x) acc) empty xs
+
+sum = foldr add 0
+product = foldr mul 1
+
+take = \n -> \xs ->
+  if' (eq n (len xs))
+    (empty)
+    (cons (xs n) (take (dec n) xs))
+
+drop = \n -> \xs ->
+  if' (eq n (len xs))
+    (empty)
+    (cons (xs n) (drop (dec n) xs))
+
+head = \xs -> take 1 xs
+tail = \xs -> drop 1 xs
+init = \xs -> take (dec (len xs)) xs
+last = \xs -> drop (dec (len xs)) xs

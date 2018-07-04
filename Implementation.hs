@@ -1,11 +1,12 @@
 import Prelude (
     (==), (<), (>), (<=), (>=),
     (+), (-), (*), div, negate,
-    (.), Int)
+    (.), Int, Bool, Eq, Ord,
+    show)
 
 -- Host Language
 eq = \x -> \y -> if x == y then true else false
-lt, gt :: Int -> Int -> (a -> a -> a)
+lt, gt :: Ord a => a -> a -> (b -> b -> b)
 lt = \x -> \y -> if x < y then true else false
 gt = \x -> \y -> if x > y then true else false
 
@@ -27,7 +28,7 @@ succ = \n -> inc n
 pred = \n -> dec n
 isZero = \f -> \x -> eq x (f x)
 
-int = \f -> f (0 :: Int)
+evi = \f -> f (0 :: Int)
 
 -- Boolean Logic
 true = \x -> \y -> x
@@ -43,7 +44,7 @@ nand = \f -> \g -> not (and f g)
 nor = \f -> \g -> not (or f g)
 xor = \f -> \g -> if' f (not g) g
 
-bool = \f -> f 1 0
+evb = \f -> f 1 0
 
 -- Lists, tuples
 empty = id
@@ -51,6 +52,9 @@ cons = \x -> \xs -> \n ->
   if' (eq n 0) x (xs (dec n))
 len = \xs ->
   sub (min 1) (xs (min 1))
+
+mapCons = \k -> \v -> \xs -> \i ->
+  if' (eq i k) v (xs i)
 
 foldr = \f -> \acc -> \xs -> foldr' f acc xs 0
   where
@@ -75,7 +79,7 @@ drop = \n -> \xs ->
     (empty)
     (cons (xs n) (drop (dec n) xs))
 
-head = \xs -> take 1 xs
-tail = \xs -> drop 1 xs
+head = take 1
+tail = drop 1
 init = \xs -> take (dec (len xs)) xs
 last = \xs -> drop (dec (len xs)) xs

@@ -26,8 +26,8 @@ char :: Char -> Lexer Char
 char c = sat (==c)
 
 string :: String -> Lexer String
-string [] = pure []
-string (c:str) = (:) <$> char c <*> string str
+string [] = lexeme $ pure []
+string (c:str) = lexeme $ (:) <$> char c <*> string str
 
 integer :: Lexer Integer
 integer = lexeme $ read <$> (many1 digit `notFollowedBy` letter)
@@ -47,5 +47,6 @@ blockComment = void $ lexeme $ between begin end (skipUntil (string "*/"))
 stringLit :: Lexer String
 stringLit = between (char '"') (char '"') (many (sat (/='"')))
 
-parens :: Lexer a -> Lexer a
+parens, maybeParens :: Lexer a -> Lexer a
 parens p = between (string "(") (string ")") p
+maybeParens p = parens p <|> p

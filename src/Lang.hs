@@ -1,8 +1,8 @@
-module Lang (Expr) where
+module Lang (Expr (..)) where
 
 data Expr
   = S String
-  | I Int
+  | I Integer
   | Let String Expr Expr
   | Abs String Expr
   | Apply Expr Expr

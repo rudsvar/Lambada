@@ -44,10 +44,20 @@ item = P $ \inp -> item' inp
         item' (x:xs) = Just (x, xs)
 
 many1 :: Parser [a] a -> Parser [a] [a]
-many1 p = do
-  x <- p
-  xs <- many p
-  return (x:xs)
+many1 p = (:) <$> p <*> many p
+
+manyTill :: Parser [a] a -> Parser [a] [a]
+manyTill p = hit <|> miss
+  where hit = lookahead p >> pure []
+        miss = (:) <$> item <*> manyTill p
+
+skip, skipMany, skipMany1 :: Parser [a] a -> Parser [a] ()
+skip p = void p
+skipMany p = void $ many p
+skipMany1 p = void $ many1 p
+
+skipUntil :: Parser [b] a -> Parser [b] ()
+skipUntil p = void (lookahead p) <|> (item >> skipUntil p)
 
 sat :: (a -> Bool) -> Parser [a] a
 sat p = item >>= \x -> if p x then pure x else empty
@@ -67,7 +77,7 @@ lookahead p = P $ \inp ->
     Nothing -> Nothing
     Just (x, _) -> Just (x, inp)
 
-between :: Parser b a -> Parser b b -> Parser b c -> Parser b c
+between :: Parser b a -> Parser b c -> Parser b d -> Parser b d
 between begin end p = do
   void $ begin
   x <- p

@@ -22,7 +22,12 @@ dec = \x -> sub x 1
 
 -- Church Numerals
 zero = \x -> x
+one = \x -> succ (zero x)
 succ = \n -> inc n
+pred = \n -> dec n
+isZero = \f -> \x -> eq x (f x)
+
+int = \f -> f (0 :: Int)
 
 -- Boolean Logic
 true = \x -> \y -> x
@@ -37,6 +42,8 @@ not = \f -> if' f false true
 nand = \f -> \g -> not (and f g)
 nor = \f -> \g -> not (or f g)
 xor = \f -> \g -> if' f (not g) g
+
+bool = \f -> f 1 0
 
 -- Lists, tuples
 empty = id

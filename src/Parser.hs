@@ -31,19 +31,24 @@ string [] = lexeme $ pure []
 string (c:str) = (:) <$> char c <*> string str
 
 integer :: Parser Integer
-integer = lexeme $ read <$> (some digit `notFollowedBy` letter)
+integer = lexeme $ read <$> some digit `notFollowedBy` letter
+
+identifier :: Parser String
+identifier = lexeme $ (:) <$> letter <*> many alphaNum
 
 oneOfChar, noneOfChar :: [Char] -> Parser Char
-oneOfChar cs = sat (flip elem cs)
-noneOfChar cs = sat (not . flip elem cs)
+oneOfChar cs = sat (`elem` cs)
+noneOfChar cs = sat (not . (`elem` cs))
 
 lineComment, blockComment :: Parser ()
-lineComment = void $ lexeme $ between (string "//") (string "\n") (skipUntil (string "\n"))
-blockComment = void $ lexeme $ between (string "/*") (string "*/") (skipUntil (string "*/"))
+lineComment = void . lexeme $ between (string "//") (string "\n") (skipUntil (string "\n"))
+blockComment = void . lexeme $ between (string "/*") (string "*/") (skipUntil (string "*/"))
 
 stringLit :: Parser String
 stringLit = between (char '"') (char '"') (many (sat (/='"')))
 
-parens, maybeParens :: Parser a -> Parser a
-parens p = between (string "(") (string ")") p
+parens, maybeParens, brackets, braces :: Parser a -> Parser a
+parens = between (char '(') (char ')')
 maybeParens p = parens p <|> p
+brackets = between (char '[') (char ']')
+braces = between (char '{') (char '}')

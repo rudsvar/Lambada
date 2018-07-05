@@ -2,14 +2,12 @@
 
 module Parser where
 
-import GenericParser
+import AltParser
 
 import Data.Char
 
 import Control.Applicative
 import Control.Monad
-
-type Parser a = GenericParser String a
 
 lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
@@ -40,18 +38,15 @@ oneOfChar, noneOfChar :: [Char] -> Parser Char
 oneOfChar cs = sat (`elem` cs)
 noneOfChar cs = sat (not . (`elem` cs))
 
-betweenStr :: String -> String -> Parser a -> Parser a
-betweenStr begin end = between (string begin) (string end)
-
 lineComment, blockComment :: Parser ()
-lineComment = void $ betweenStr "//" "\n" $ skipUntil (string "\n")
-blockComment = void $ betweenStr "/*" "*/" $ skipUntil (string "*/")
+lineComment = void $ between (string "//") (char '\n') $ skipUntil (string "\n")
+blockComment = void $ between (string "/*") (string "*/") $ skipUntil (string "*/")
 
 stringLit :: Parser String
-stringLit = betweenStr "\"" "\"" (many (sat (/='"')))
+stringLit = between (string "\"") (string "\"") (many (sat (/='"')))
 
 parens, maybeParens, brackets, braces :: Parser a -> Parser a
-parens = betweenStr "(" ")"
+parens = between (char '(') (char ')')
 maybeParens p = parens p <|> p
-brackets = betweenStr "[" "]"
-braces = betweenStr "{" "}"
+brackets = between (char '[') (char ']')
+braces = between (char '{') (char '}')

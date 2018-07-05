@@ -1,9 +1,13 @@
+module AltParser where
+
+import Prelude hiding (fail)
+
 import Data.Char
 
 import System.Environment
 
 import Control.Applicative (Alternative, empty, (<|>), many, some)
-import Control.Monad (ap)
+import Control.Monad (ap, void)
 
 type Result a = Either State (a, State)
 
@@ -18,7 +22,7 @@ parseFile' p f s = case parseDefault p s of
       location = f ++ ":" ++ show (line st) ++ ":" ++ show (col st)
       reason
         | null (input st) = "Unexpected end of input"
-        | otherwise = "Unexpected " ++ (show . head) (input st) ++ "\n" ++ show (st {input = tail (input st)})
+        | otherwise = "Unexpected " ++ (show . head) (input st) ++ " in " ++ show st
 
 parseDefault :: Parser a -> String -> Result a
 parseDefault p s = parse p $ State { input = s, line = 1, col = 1 }
@@ -43,11 +47,8 @@ data State = State {
   col :: Int
 } deriving Eq
 
-defaultState :: State
-defaultState = State {input = "", line = 1, col = 1}
-
 instance Show State where
-  show s = show (input s) ++ " remaining"
+  show s = show (input s)
 
 instance Functor Parser where
   fmap f p = p >>= pure . f
@@ -78,23 +79,39 @@ item = P $ \st ->
     [] -> Left st
 
 sat :: (Char -> Bool) -> Parser Char
-sat p = item >>= \x -> if p x then pure x else P $ \st -> Left (st {input = x : input st})
+sat p = do
+  x <- item
+  if p x
+    then pure x
+    else P $ \st -> Left (st {input = x : input st})
 
-char :: Char -> Parser Char
-char c = sat (==c)
+lookahead :: Parser a -> Parser a
+lookahead p = getState >>= (p <*) . setState
+  where
+    getState = P $ \st -> Right (st, st)
+    setState st = P $ const $ Right ((), st)
 
-space, letter, digit, alphaNum :: Parser Char
-space = sat isSpace
-letter = sat isLetter
-digit = sat isDigit
-alphaNum = sat isAlphaNum
+fail :: Parser a -> Parser ()
+fail p = P $ \st ->
+  case parse p st of
+    Left err -> Right ((), st)
+    _ -> Left st
 
-spaces :: Parser String
-spaces = many space
+notFollowedBy :: Parser a -> Parser b -> Parser a
+p `notFollowedBy` q = p <* fail q
 
-lexeme :: Parser a -> Parser a
-lexeme p = p <* spaces
+between :: Parser a -> Parser b -> Parser c -> Parser c
+between begin end p = begin *> p <* end
 
-string :: String -> Parser String
-string [] = pure []
-string (c:str) = (:) <$> char c <*> string str
+manyTill :: Parser a -> Parser String
+manyTill p = hit <|> miss
+  where hit = lookahead p >> pure []
+        miss = (:) <$> item <*> manyTill p
+
+skipUntil :: Parser a -> Parser ()
+skipUntil p = void $ manyTill p
+
+skip, skipMany, skipSome :: Parser a -> Parser ()
+skip p = void p
+skipMany p = void $ many p
+skipSome p = void $ some p

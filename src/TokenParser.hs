@@ -1,23 +1,32 @@
-module Tokenizer where
+-- |A module containing Lambada-specific parsers
 
-import Lang
+module TokenParser () where
+
 import Parser
-import Lexer
 
 import Control.Applicative
 
-str, int, var :: Lexer Expr
+data Expr
+  = S String
+  | I Integer
+  | Var String
+  | Let String Expr Expr
+  | Abs String Expr
+  | Apply Expr Expr
+  deriving Show
+
+str, int, var :: Parser Expr
 str = S <$> stringLit
 int = I <$> integer
 var = Var <$> identifier
 
-identifier :: Lexer String
+identifier :: Parser String
 identifier = lexeme $ do
   x <- letter <|> char '_'
   xs <- many alphaNum <|> (\x -> [x]) <$> char '\''
   pure (x:xs)
 
-lambda :: Lexer Expr
+lambda :: Parser Expr
 lambda = maybeParens $ do
   char '\\'
   s <- identifier

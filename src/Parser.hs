@@ -1,85 +1,54 @@
+-- |A module for parsers that parse strings
+
 module Parser where
+
+import GenericParser
+
+import Data.Char
 
 import Control.Applicative
 import Control.Monad
 
-data Parser b a = P {
-  parse :: b -> Maybe (a, b)
-}
+type Parser a = GenericParser String a
 
-instance Functor (Parser b) where
-  fmap f p = P $ \inp ->
-    case parse p inp of
-      Nothing -> Nothing
-      Just (x, inp') -> Just (f x, inp')
+lexeme :: Parser a -> Parser a
+lexeme p = p <* spaces
 
-instance Applicative (Parser b) where
-  pure x = P $ \inp -> Just (x, inp)
-  p <*> q = P $ \inp ->
-    case parse p inp of
-      Nothing -> Nothing
-      Just (f, inp') ->
-        case parse q inp' of
-            Nothing -> Nothing
-            Just (x, inp'') -> Just (f x, inp'')
+alpha, digit, alphaNum :: Parser Char
+alpha = sat isAlpha
+letter = sat isLetter
+digit = sat isDigit
+alphaNum = sat isAlphaNum
 
-instance Alternative (Parser b) where
-  empty = P $ const Nothing
-  p <|> q = P $ \inp ->
-    case parse p inp of
-      Nothing -> parse q inp
-      x -> x
+space, spaces :: Parser ()
+space = void $ sat isSpace
+spaces = void $ many space
 
-instance Monad (Parser b) where
-  return = pure
-  p >>= f = P $ \inp ->
-    case parse p inp of
-      Nothing -> Nothing
-      Just (x, inp') ->
-        parse (f x) inp'
+char :: Char -> Parser Char
+char c = sat (==c)
 
-item :: Parser [a] a
-item = P $ \inp -> item' inp
-  where item' [] = Nothing
-        item' (x:xs) = Just (x, xs)
+string :: String -> Parser String
+string [] = lexeme $ pure []
+string (c:str) = lexeme $ (:) <$> char c <*> string str
 
-many1 :: Parser [a] a -> Parser [a] [a]
-many1 p = (:) <$> p <*> many p
+integer :: Parser Integer
+integer = lexeme $ read <$> (some digit `notFollowedBy` letter)
 
-manyTill :: Parser [a] a -> Parser [a] [a]
-manyTill p = hit <|> miss
-  where hit = lookahead p >> pure []
-        miss = (:) <$> item <*> manyTill p
+oneOfChar, noneOfChar :: [Char] -> Parser Char
+oneOfChar cs = sat (flip elem cs)
+noneOfChar cs = sat (not . flip elem cs)
 
-skip, skipMany, skipMany1 :: Parser [a] a -> Parser [a] ()
-skip p = void p
-skipMany p = void $ many p
-skipMany1 p = void $ many1 p
+lineComment, blockComment :: Parser ()
+lineComment = void $ lexeme $ between begin end (skipUntil (string "\n"))
+  where begin = string "//"
+        end = string "\n"
+blockComment = void $ lexeme $ between begin end (skipUntil (string "*/"))
+  where begin = string "/*"
+        end = string "*/"
 
-skipUntil :: Parser [b] a -> Parser [b] ()
-skipUntil p = void (lookahead p) <|> (item >> skipUntil p)
+stringLit :: Parser String
+stringLit = between (char '"') (char '"') (many (sat (/='"')))
 
-sat :: (a -> Bool) -> Parser [a] a
-sat p = item >>= \x -> if p x then pure x else empty
-
-notFollowedBy :: Parser b a -> Parser b c -> Parser b a
-notFollowedBy p q = P $ \inp ->
-  case parse p inp of
-    Nothing -> Nothing
-    Just (x, inp') ->
-      case parse q inp' of
-        Nothing -> Just (x, inp')
-        _ -> empty
-
-lookahead :: Parser b a -> Parser b a
-lookahead p = P $ \inp ->
-  case parse p inp of
-    Nothing -> Nothing
-    Just (x, _) -> Just (x, inp)
-
-between :: Parser b a -> Parser b c -> Parser b d -> Parser b d
-between begin end p = do
-  void $ begin
-  x <- p
-  void $ end
-  return x
+parens, maybeParens :: Parser a -> Parser a
+parens p = between (string "(") (string ")") p
+maybeParens p = parens p <|> p

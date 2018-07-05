@@ -8,13 +8,16 @@ import Control.Applicative (Alternative, empty, (<|>), many, some)
 import Control.Monad (void, ap)
 
 data GenericParser b a = GP {
-  parse :: b -> Maybe (a, b)
+  parse :: b -> Maybe (a, b),
+  line :: Int,
+  col :: Int
 }
 
 instance Functor (GenericParser b) where
   fmap f p = p >>= pure . f
 
 instance Applicative (GenericParser b) where
+  pure x = GP { line = 0, col = 0, parse = \inp -> Just (x, inp) }
   pure x = GP $ \inp -> Just (x, inp)
   (<*>) = ap
 

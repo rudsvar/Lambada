@@ -13,7 +13,7 @@ parseFile p f = parseFile' p f <$> readFile f
 parseFile' :: Show a => Parser a -> FilePath -> String -> Either String a
 parseFile' p f s = case parseDefault p s of
   Right (x, _) -> Right x
-  Left st | null (input st) -> Left $ "Parse error: " ++ location ++ "\n" ++ reason
+  Left st -> Left $ "Parse error: " ++ location ++ "\n" ++ reason
     where
       location = f ++ ":" ++ show (line st) ++ ":" ++ show (col st)
       reason
@@ -28,7 +28,7 @@ printEither (Left err) = putStrLn err
 printEither (Right x) = print x
 
 parseTest :: Show a => Parser a -> String -> IO ()
-parseTest p s = printEither $ parseFile' p "none" s
+parseTest p s = printEither $ parseFile' p "ghci" s
 
 parseFileTest :: Show a => Parser a -> FilePath -> IO ()
 parseFileTest p f = parseFile p f >>= printEither

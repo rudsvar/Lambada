@@ -14,8 +14,7 @@ type Parser a = GenericParser String a
 lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
-alpha, digit, alphaNum :: Parser Char
-alpha = sat isAlpha
+letter, digit, alphaNum :: Parser Char
 letter = sat isLetter
 digit = sat isDigit
 alphaNum = sat isAlphaNum
@@ -29,7 +28,7 @@ char c = sat (==c)
 
 string :: String -> Parser String
 string [] = lexeme $ pure []
-string (c:str) = lexeme $ (:) <$> char c <*> string str
+string (c:str) = (:) <$> char c <*> string str
 
 integer :: Parser Integer
 integer = lexeme $ read <$> (some digit `notFollowedBy` letter)
@@ -39,12 +38,8 @@ oneOfChar cs = sat (flip elem cs)
 noneOfChar cs = sat (not . flip elem cs)
 
 lineComment, blockComment :: Parser ()
-lineComment = void $ lexeme $ between begin end (skipUntil (string "\n"))
-  where begin = string "//"
-        end = string "\n"
-blockComment = void $ lexeme $ between begin end (skipUntil (string "*/"))
-  where begin = string "/*"
-        end = string "*/"
+lineComment = void $ lexeme $ between (string "//") (string "\n") (skipUntil (string "\n"))
+blockComment = void $ lexeme $ between (string "/*") (string "*/") (skipUntil (string "*/"))
 
 stringLit :: Parser String
 stringLit = between (char '"') (char '"') (many (sat (/='"')))

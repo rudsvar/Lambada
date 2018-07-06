@@ -25,13 +25,13 @@ digit    = setLabelIfNone "digit" $ sat isDigit
 alphaNum = setLabelIfNone "alphaNum" $ sat isAlphaNum
 
 char :: Char -> Parser Char
-char c = setLabel ("char " ++ show c) $ sat (==c)
+char c = setLabel ("char " ++ show c) $ lexeme $ sat (==c)
 
 notChar :: Char -> Parser ()
 notChar c = void $ setLabel ("not char " ++ show c) $ sat (/=c)
 
 string :: String -> Parser String
-string s = setLabel "string" $ lexeme $ string' s
+string = setLabel "string" . lexeme . string'
   where
     string' [] = empty
     string' [c] = (:[]) <$> char c

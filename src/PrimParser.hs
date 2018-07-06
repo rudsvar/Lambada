@@ -88,7 +88,7 @@ lookahead :: Parser a -> Parser a
 lookahead p = getState >>= (p <*) . setState
 
 notFollowedBy :: Parser a -> Parser b -> Parser a
-notFollowedBy p q = (p <*) $ mustFail q
+notFollowedBy p q = p <* mustFail q
 
 getState :: Parser State
 getState = P $ \st -> Right (st, st)

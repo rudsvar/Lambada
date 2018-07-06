@@ -28,7 +28,7 @@ char :: Char -> Parser Char
 char c = setLabel ("char " ++ show c) $ sat (==c)
 
 notChar :: Char -> Parser ()
-notChar c = void $ setLabel ("not char " ++ show c) $ mustFail (char c)
+notChar c = void $ setLabel ("not char " ++ show c) $ sat (/=c)
 
 string :: String -> Parser String
 string s = setLabel "string" $ lexeme $ string' s
@@ -38,7 +38,7 @@ string s = setLabel "string" $ lexeme $ string' s
     string' (c:str) = (:) <$> char c <*> string str
 
 intLit :: Parser Integer
-intLit = setLabel "integer literal" $ lexeme $ read <$> (some digit) <* (addLabel ("letter after "++) $ mustFail letter)
+intLit = setLabel "integer literal" $ lexeme $ read <$> some digit <* (addLabel ("no letter after "++) $ mustFail letter)
 
 identifier :: Parser String
 identifier = setLabel "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
@@ -86,8 +86,8 @@ blockComment = between (string begin) (string end) $ setLabel endStr $ skipUntil
   where begin = "/*"; end = "*/"; endStr = "end of block comment: " ++ show end;
 
 newLine, eof :: Parser ()
-eof = setLabel "end of file" $ mustFail item
-newLine = void $ char '\n'
+eof = setLabel "end of file" $ mustFail (setLabel "a" item)
+newLine = setLabel "newline" $ void $ char '\n'
 
 parens, maybeParens, brackets, braces :: Parser a -> Parser a
 parens = between (char '(') (char ')')

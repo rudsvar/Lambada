@@ -78,7 +78,7 @@ clearLabel = modifyLabel (const Nothing)
 
 -- |Succeed if the given parser fails
 mustFail :: Parser a -> Parser ()
-mustFail p = addLabel (++" must fail") $ P $ \st ->
+mustFail p = P $ \st ->
   case runParser p st of
     Left _ -> Right ((), st)
     _ -> Left st

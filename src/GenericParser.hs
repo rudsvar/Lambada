@@ -17,16 +17,17 @@ sat :: (Char -> Bool) -> Parser Char
 sat p = p <$> lookahead item >>= bool empty item
 
 letter, digit, alphaNum :: Parser Char
-letter = addLabel "letter" $ sat isLetter
-digit = addLabel "digit" $ sat isDigit
-alphaNum = addLabel "alphaNum" $ sat isAlphaNum
+letter = setLabel "letter" $ sat isLetter
+digit = setLabel "digit" $ sat isDigit
+alphaNum = setLabel "alphaNum" $ sat isAlphaNum
 
 char :: Char -> Parser Char
-char c = addLabel ("char " ++ show c) $ lexeme $ sat (==c)
+char c = setLabel ("char " ++ show c) $ lexeme $ sat (==c)
 
 string :: String -> Parser String
-string [] = pure []
-string (c:str) = addLabel ("string " ++ c:str) $ (:) <$> char c <*> string str
+string s = setLabel ("string " ++ show s) $ string' s
+  where string' (c:str) = (:) <$> (setLabel "" $ char c) <*> string' str
+        string' [] = pure []
 
 intLit :: Parser Integer
 intLit = lexeme $ read <$> some digit `notFollowedBy` letter

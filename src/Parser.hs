@@ -11,7 +11,7 @@ import GenericParser
 -- Parse a string, return the entire result
 parseDefault :: Parser a -> String -> Either State (a, State)
 parseDefault p s = runParser p defaultState
-  where defaultState = State { input = s, line = 1, col = 1, label = "" }
+  where defaultState = State { input = s, line = 1, col = 1, label = Nothing }
 
 -- Parse a given string, discard the state on success
 parse :: Show a => Parser a -> String -> Either String a
@@ -46,10 +46,7 @@ printWithDebug (Right (x,st)) = putStrLn $ "Ok (" ++ show x ++ ", " ++ show (inp
 
 -- Format the state for printing
 formatState :: FilePath -> State -> String
-formatState f st = "Parse error: " ++ location ++ "\n" ++ reason
+formatState f st = "Parse error: " ++ location ++ "\n" ++ show st
   where
     location = f ++ ":" ++ show (line st) ++ ":" ++ show (col st)
-    reason
-      | (x:_) <- input st = "Got " ++ show x ++ " from " ++ show (input st) ++ "\nExpected " ++ label st
-      | otherwise = "Unexpected end of input"
 

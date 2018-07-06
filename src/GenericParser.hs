@@ -10,7 +10,7 @@ module GenericParser (
 import PrimParser
 
 import Prelude hiding (until)
-import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
+import Data.Char (isLetter, isDigit, isAlphaNum)
 import Data.Bool (bool)
 import Control.Applicative ((<|>), empty, many, some)
 import Control.Monad (void)
@@ -37,14 +37,8 @@ string s = setLabel "string" $ lexeme $ string' s
     string' [c] = (:[]) <$> char c
     string' (c:str) = (:) <$> char c <*> string str
 
-notString :: String -> Parser ()
--- notString s = setLabel ("string " ++ s) $ mustFail (string s)
-notString [] = empty
-notString [c] = void $ sat (/=c)
-notString (c:cs) = void (sat (/=c)) <|> notString cs
-
 intLit :: Parser Integer
-intLit = setLabel "integer literal" $ lexeme $ read <$> (setLabel "digit, then letter" $ some digit `notFollowedBy` letter)
+intLit = setLabel "integer literal" $ lexeme $ read <$> (some digit) <* (addLabel ("letter after "++) $ mustFail letter)
 
 identifier :: Parser String
 identifier = setLabel "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
@@ -76,7 +70,7 @@ lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
 space, spaces :: Parser ()
-space = (void $ sat isSpace) <|> lineComment
+space = void (char ' ') <|> lineComment <|> blockComment
 spaces = void $ many space
 
 oneOf :: [Parser a] -> Parser a
@@ -86,15 +80,14 @@ noneOf :: [Parser a] -> Parser ()
 noneOf xs = foldr ((>>) . mustFail) (pure ()) xs
 
 lineComment, blockComment :: Parser ()
-lineComment = void $ between (string begin) (string end) $ setLabel ("end of line comment (" ++ end ++ ")") $ skipUntil (string end)
-  where begin = "//"
-        end = "\n"
-blockComment = between (string begin) (string end) $ setLabel ("end of block comment (" ++ end ++ ")") $ skipUntil (string end)
-  where begin = "/*"
-        end = "*/"
+lineComment = void $ between (string begin) (setLabel "a" $ string end) $ setLabel endStr $ skipUntil (string end)
+  where begin = "//"; end = "\n"; endStr = "end of line comment: " ++ show end;
+blockComment = between (string begin) (string end) $ setLabel endStr $ skipUntil (string end)
+  where begin = "/*"; end = "*/"; endStr = "end of block comment: " ++ show end;
 
-eof :: Parser ()
+newLine, eof :: Parser ()
 eof = setLabel "end of file" $ mustFail item
+newLine = void $ char '\n'
 
 parens, maybeParens, brackets, braces :: Parser a -> Parser a
 parens = between (char '(') (char ')')

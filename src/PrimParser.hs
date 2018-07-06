@@ -29,7 +29,7 @@ data State = State {
 instance Show State where
   show st = "Expected\n> " ++ pp (label st) ++ "\nActual\n> " ++ reason
     where
-      pp = maybe "<missing label>" id
+      pp = maybe "<no label>" id
       reason
         | null (input st) = "Unexpected end of input"
         | otherwise = show (input st)

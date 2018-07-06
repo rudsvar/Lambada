@@ -6,7 +6,7 @@
 
 module PrimParser (
   Parser (runParser), State (..),
-  fail, item, lookahead,
+  addLabel, fail, item, lookahead,
   empty, (<|>), many, some
 ) where
 
@@ -21,11 +21,12 @@ newtype Parser a = P {
 data State = State {
   input :: String,
   line :: Int,
-  col :: Int
-} deriving Eq
+  col :: Int,
+  label :: String
+}
 
 instance Show State where
-  show s = show (input s)
+  show st = show (input st) ++ ", expected " ++ label st
 
 instance Functor Parser where
   fmap f p = p >>= pure . f
@@ -36,9 +37,9 @@ instance Applicative Parser where
 
 instance Alternative Parser where
   empty = P $ \st -> Left st
-  p <|> q = P $ \st ->
+  p <|> q = addLabel "Alt (" $ P $ \st ->
     case runParser p st of
-      Left _ -> runParser q st
+      Left st' -> runParser q $ st { label = label st ++ ", " ++ label st'}
       x -> x
 
 instance Monad Parser where
@@ -50,15 +51,27 @@ instance Monad Parser where
 
 -- |Take a single character from the input
 item :: Parser Char
-item = P $ \st ->
+item = setLabel "" $ P $ \st ->
   case input st of
     ('\n':xs) -> Right ('\n', st {input = xs, line = line st + 1, col = 1})
     (x:xs) -> Right (x, st {input = xs, col = col st + 1})
     [] -> Left st
 
+setLabel :: String -> Parser a -> Parser a
+setLabel s p = getSetLabel (const s) p
+
+getSetLabel :: (String -> String) -> Parser a -> Parser a
+getSetLabel f p = do
+  st <- getState
+  setState $ st { label = f (label st) }
+  p
+
+addLabel :: String -> Parser a -> Parser a
+addLabel s = getSetLabel (++s++", ")
+
 -- |Succeed if the given parser fails
 fail :: Parser a -> Parser ()
-fail p = P $ \st ->
+fail p = getSetLabel (++" to fail") $ P $ \st ->
   case runParser p st of
     Left _ -> Right ((), st)
     _ -> Left st
@@ -66,7 +79,10 @@ fail p = P $ \st ->
 -- |Parse with the given parser, but do not change the state
 lookahead :: Parser a -> Parser a
 lookahead p = getState >>= (p <*) . setState
-  where
-    getState = P $ \st -> Right (st, st)
-    setState st = P $ const $ Right ((), st)
+
+getState :: Parser State
+getState = P $ \st -> Right (st, st)
+
+setState :: State -> Parser ()
+setState st = P $ const $ Right ((), st)
 

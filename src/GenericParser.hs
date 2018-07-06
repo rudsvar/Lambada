@@ -1,4 +1,6 @@
--- |A module for higher level parsers
+{- |
+    A module for higher level parsers
+-}
 
 module GenericParser (
   module GenericParser,
@@ -7,43 +9,52 @@ module GenericParser (
 
 import PrimParser
 
-import Prelude hiding (fail, until)
+import Prelude hiding (until)
 import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
 import Data.Bool (bool)
 import Control.Applicative ((<|>), empty, many, some)
 import Control.Monad (void)
 
-sat :: (Char -> Bool) -> Parser Char
+sat, noSat :: (Char -> Bool) -> Parser Char
 sat p = p <$> lookahead item >>= bool empty item
+noSat p = sat (not . p)
 
 letter, digit, alphaNum :: Parser Char
-letter = setLabel "letter" $ sat isLetter
-digit = setLabel "digit" $ sat isDigit
-alphaNum = setLabel "alphaNum" $ sat isAlphaNum
+letter   = setLabelIfNone "letter" $ sat isLetter
+digit    = setLabelIfNone "digit" $ sat isDigit
+alphaNum = setLabelIfNone "alphaNum" $ sat isAlphaNum
 
 char :: Char -> Parser Char
-char c = setLabel ("char " ++ show c) $ lexeme $ sat (==c)
+char c = setLabel ("char " ++ show c) $ sat (==c)
+
+notChar :: Char -> Parser ()
+notChar c = void $ setLabel ("not char " ++ show c) $ mustFail (char c)
 
 string :: String -> Parser String
-string s = setLabel ("string " ++ show s) $ string' s
-  where string' (c:str) = (:) <$> (setLabel "" $ char c) <*> string' str
-        string' [] = pure []
+string s = setLabel "string" $ lexeme $ string' s
+  where
+    string' [] = empty
+    string' [c] = (:[]) <$> char c
+    string' (c:str) = (:) <$> char c <*> string str
+
+notString :: String -> Parser ()
+-- notString s = setLabel ("string " ++ s) $ mustFail (string s)
+notString [] = empty
+notString [c] = void $ sat (/=c)
+notString (c:cs) = void (sat (/=c)) <|> notString cs
 
 intLit :: Parser Integer
-intLit = lexeme $ read <$> some digit `notFollowedBy` letter
+intLit = setLabel "integer literal" $ lexeme $ read <$> (setLabel "digit, then letter" $ some digit `notFollowedBy` letter)
 
 identifier :: Parser String
-identifier = lexeme $ (:) <$> letter <*> many alphaNum
+identifier = setLabel "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
 
 oneOfChar, noneOfChar :: [Char] -> Parser Char
-oneOfChar cs = sat (`elem` cs)
-noneOfChar cs = sat (not . (`elem` cs))
+oneOfChar cs = setLabel ("one of " ++ show cs) $ sat (`elem` cs)
+noneOfChar cs = setLabel ("none of " ++ show cs) $ sat (not . (`elem` cs))
 
 strLit :: Parser String
 strLit = between (string "\"") (string "\"") (many (sat (/='"')))
-
-notFollowedBy :: Parser a -> Parser b -> Parser a
-notFollowedBy p q = p <* fail q
 
 between :: Parser a -> Parser b -> Parser c -> Parser c
 between begin end p = begin *> p <* end
@@ -65,19 +76,25 @@ lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
 space, spaces :: Parser ()
-space = void $ sat isSpace
+space = (void $ sat isSpace) <|> lineComment
 spaces = void $ many space
 
 oneOf :: [Parser a] -> Parser a
 oneOf = foldr (<|>) empty
 
 noneOf :: [Parser a] -> Parser ()
-noneOf [] = pure ()
-noneOf (x:xs) = fail x >> noneOf xs
+noneOf xs = foldr ((>>) . mustFail) (pure ()) xs
 
 lineComment, blockComment :: Parser ()
-lineComment = void $ between (string "//") (char '\n') $ skipUntil $ string "\n"
-blockComment = void $ between (string "/*") (string "*/") $ skipUntil $ string "*/"
+lineComment = void $ between (string begin) (string end) $ setLabel ("end of line comment (" ++ end ++ ")") $ skipUntil (string end)
+  where begin = "//"
+        end = "\n"
+blockComment = between (string begin) (string end) $ setLabel ("end of block comment (" ++ end ++ ")") $ skipUntil (string end)
+  where begin = "/*"
+        end = "*/"
+
+eof :: Parser ()
+eof = setLabel "end of file" $ mustFail item
 
 parens, maybeParens, brackets, braces :: Parser a -> Parser a
 parens = between (char '(') (char ')')

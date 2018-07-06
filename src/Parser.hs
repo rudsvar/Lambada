@@ -15,15 +15,15 @@ parseDefault p s = runParser p defaultState
 
 -- Parse a given string, discard the state on success
 parse :: Show a => Parser a -> String -> Either String a
-parse p s = discard $ parseFile' p "ghci" s
+parse p s = discardState $ parseFile' p "ghci" s
 
 -- Parse a given file, discard the state on success
 parseFile :: Show a => Parser a -> FilePath -> IO (Either String a)
-parseFile p f = discard <$> parseFile' p f <$> readFile f
+parseFile p f = discardState <$> parseFile' p f <$> readFile f
 
-discard :: Either String (a, State) -> Either String a
-discard (Left err) = Left err
-discard (Right (x, _)) = Right x
+discardState :: Either String (a, State) -> Either String a
+discardState (Left err) = Left err
+discardState (Right (x, _)) = Right x
 
 -- Parse with a given filename and content, format the result and state
 parseFile' :: Show a => Parser a -> FilePath -> String -> Either String (a, State)

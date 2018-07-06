@@ -1,3 +1,1 @@
-This is content 123
-hello there!
-
+lambda = (\x -> something)

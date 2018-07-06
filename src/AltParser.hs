@@ -2,9 +2,7 @@ module AltParser where
 
 import Prelude hiding (fail)
 
-import Data.Char
-
-import System.Environment
+import Data.Bool (bool)
 
 import Control.Applicative (Alternative, empty, (<|>), many, some)
 import Control.Monad (ap, void)
@@ -79,11 +77,7 @@ item = P $ \st ->
     [] -> Left st
 
 sat :: (Char -> Bool) -> Parser Char
-sat p = do
-  x <- item
-  if p x
-    then pure x
-    else P $ \st -> Left (st {input = x : input st})
+sat p = p <$> lookahead item >>= bool empty item
 
 lookahead :: Parser a -> Parser a
 lookahead p = getState >>= (p <*) . setState

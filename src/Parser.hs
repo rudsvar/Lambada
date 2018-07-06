@@ -4,10 +4,11 @@ module Parser where
 
 import AltParser
 
-import Data.Char
+import Prelude hiding (fail)
 
-import Control.Applicative
-import Control.Monad
+import Data.Char
+import Control.Applicative ((<|>), empty, many, some)
+import Control.Monad (void)
 
 lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
@@ -28,11 +29,18 @@ string :: String -> Parser String
 string [] = pure []
 string (c:str) = (:) <$> char c <*> string str
 
-integer :: Parser Integer
-integer = lexeme $ read <$> some digit `notFollowedBy` letter
+intLit :: Parser Integer
+intLit = lexeme $ read <$> some digit `notFollowedBy` letter
 
 identifier :: Parser String
 identifier = lexeme $ (:) <$> letter <*> many alphaNum
+
+oneOf :: [Parser a] -> Parser a
+oneOf = foldr (<|>) empty
+
+noneOf :: [Parser a] -> Parser ()
+noneOf [] = pure ()
+noneOf (x:xs) = fail x >> noneOf xs
 
 oneOfChar, noneOfChar :: [Char] -> Parser Char
 oneOfChar cs = sat (`elem` cs)
@@ -42,8 +50,8 @@ lineComment, blockComment :: Parser ()
 lineComment = void $ between (string "//") (char '\n') $ skipUntil (string "\n")
 blockComment = void $ between (string "/*") (string "*/") $ skipUntil (string "*/")
 
-stringLit :: Parser String
-stringLit = between (string "\"") (string "\"") (many (sat (/='"')))
+strLit :: Parser String
+strLit = between (string "\"") (string "\"") (many (sat (/='"')))
 
 parens, maybeParens, brackets, braces :: Parser a -> Parser a
 parens = between (char '(') (char ')')

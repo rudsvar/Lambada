@@ -2,13 +2,35 @@
 
 module Parser where
 
-import AltParser
+import PrimParser
 
-import Prelude hiding (fail)
-
-import Data.Char
+import Prelude hiding (fail, until)
+import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
+import Data.Bool (bool)
 import Control.Applicative ((<|>), empty, many, some)
 import Control.Monad (void)
+
+sat :: (Char -> Bool) -> Parser Char
+sat p = p <$> lookahead item >>= bool empty item
+
+notFollowedBy :: Parser a -> Parser b -> Parser a
+notFollowedBy p q = p <* fail q
+
+between :: Parser a -> Parser b -> Parser c -> Parser c
+between begin end p = begin *> p <* end
+
+until :: Parser a -> Parser b -> Parser [a]
+until p q = hit <|> miss
+  where hit = lookahead q >> pure []
+        miss = (:) <$> p <*> p `until` q
+
+skipUntil :: Parser a -> Parser ()
+skipUntil = void . (item `until`)
+
+skip, skipMany, skipSome :: Parser a -> Parser ()
+skip = void
+skipMany = void . many
+skipSome = void . some
 
 lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
@@ -47,8 +69,8 @@ oneOfChar cs = sat (`elem` cs)
 noneOfChar cs = sat (not . (`elem` cs))
 
 lineComment, blockComment :: Parser ()
-lineComment = void $ between (string "//") (char '\n') $ skipUntil (string "\n")
-blockComment = void $ between (string "/*") (string "*/") $ skipUntil (string "*/")
+lineComment = void $ between (string "//") (char '\n') $ skipUntil $ string "\n"
+blockComment = void $ between (string "/*") (string "*/") $ skipUntil $ string "*/"
 
 strLit :: Parser String
 strLit = between (string "\"") (string "\"") (many (sat (/='"')))

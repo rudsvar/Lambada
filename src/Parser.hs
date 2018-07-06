@@ -1,82 +1,54 @@
--- |A module for parsers that parse strings
-
-module Parser where
+module Parser (
+  parseFile,
+  parseTest,
+  parse
+) where
 
 import PrimParser
+import GenericParser
 
-import Prelude hiding (fail, until)
-import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
-import Data.Bool (bool)
-import Control.Applicative ((<|>), empty, many, some)
-import Control.Monad (void)
+-- Parse a string, return the entire result
+parseDefault :: Parser a -> String -> Either State (a, State)
+parseDefault p s = parse p defaultState
+  where defaultState = State { input = s, line = 1, col = 1 }
 
-sat :: (Char -> Bool) -> Parser Char
-sat p = p <$> lookahead item >>= bool empty item
+-- Parse a given string, discard the state on success
+parseString :: Show a => Parser a -> String -> Either String a
+parseString p s = discard $ parseFile' p "ghci" s
 
-notFollowedBy :: Parser a -> Parser b -> Parser a
-notFollowedBy p q = p <* fail q
+-- Parse a given file, discard the state on success
+parseFile :: Show a => Parser a -> FilePath -> IO (Either String a)
+parseFile p f = discard <$> parseFile' p f <$> readFile f
 
-between :: Parser a -> Parser b -> Parser c -> Parser c
-between begin end p = begin *> p <* end
+discard :: Either String (a, State) -> Either String a
+discard (Left err) = Left err
+discard (Right (x, _)) = Right x
 
-until :: Parser a -> Parser b -> Parser [a]
-until p q = hit <|> miss
-  where hit = lookahead q >> pure []
-        miss = (:) <$> p <*> p `until` q
+-- Parse with a given filename and content, format the result and state
+parseFile' :: Show a => Parser a -> FilePath -> String -> Either String (a, State)
+parseFile' p f s = format $ parseDefault p s
+  where format (Left st) = Left $ formatState f st
+        format (Right (x,st)) = Right (x, st)
 
-skipUntil :: Parser a -> Parser ()
-skipUntil = void . (item `until`)
+-- Parse a string with a parser, print the result and state
+parseTest :: Show a => Parser a -> String -> IO ()
+parseTest p s = printWithDebug $ parseFile' p "ghci" s
 
-skip, skipMany, skipSome :: Parser a -> Parser ()
-skip = void
-skipMany = void . many
-skipSome = void . some
+-- Parse a file with a parser, print the result and state
+parseFileTest :: Show a => Parser a -> FilePath -> IO ()
+parseFileTest p f = parseFile' p f <$> readFile f >>= printWithDebug
 
-lexeme :: Parser a -> Parser a
-lexeme p = p <* spaces
+-- Format the result and print it
+printWithDebug :: Show a => Either String (a, State) -> IO ()
+printWithDebug (Left err) = putStrLn err
+printWithDebug (Right (x,st)) = putStrLn $ "Ok (" ++ show x ++ ", " ++ show (input st) ++ ")"
 
-letter, digit, alphaNum :: Parser Char
-letter = sat isLetter
-digit = sat isDigit
-alphaNum = sat isAlphaNum
+-- Format the state for printing
+formatState :: FilePath -> State -> String
+formatState f st = "Parse error: " ++ location ++ "\n" ++ reason
+  where
+    location = f ++ ":" ++ show (line st) ++ ":" ++ show (col st)
+    reason
+      | null (input st) = "  Unexpected end of input"
+      | otherwise =  "  Unexpected " ++ (show . head) (input st) ++ " in " ++ show st
 
-space, spaces :: Parser ()
-space = void $ sat isSpace
-spaces = void $ many space
-
-char :: Char -> Parser Char
-char c = lexeme $ sat (==c)
-
-string :: String -> Parser String
-string [] = pure []
-string (c:str) = (:) <$> char c <*> string str
-
-intLit :: Parser Integer
-intLit = lexeme $ read <$> some digit `notFollowedBy` letter
-
-identifier :: Parser String
-identifier = lexeme $ (:) <$> letter <*> many alphaNum
-
-oneOf :: [Parser a] -> Parser a
-oneOf = foldr (<|>) empty
-
-noneOf :: [Parser a] -> Parser ()
-noneOf [] = pure ()
-noneOf (x:xs) = fail x >> noneOf xs
-
-oneOfChar, noneOfChar :: [Char] -> Parser Char
-oneOfChar cs = sat (`elem` cs)
-noneOfChar cs = sat (not . (`elem` cs))
-
-lineComment, blockComment :: Parser ()
-lineComment = void $ between (string "//") (char '\n') $ skipUntil $ string "\n"
-blockComment = void $ between (string "/*") (string "*/") $ skipUntil $ string "*/"
-
-strLit :: Parser String
-strLit = between (string "\"") (string "\"") (many (sat (/='"')))
-
-parens, maybeParens, brackets, braces :: Parser a -> Parser a
-parens = between (char '(') (char ')')
-maybeParens p = parens p <|> p
-brackets = between (char '[') (char ']')
-braces = between (char '{') (char '}')

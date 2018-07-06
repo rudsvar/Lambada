@@ -1,20 +1,21 @@
 module Parser (
+  module GenericParser,
+  parse,
   parseFile,
   parseTest,
-  parse
+  parseFileTest
 ) where
 
-import PrimParser
 import GenericParser
 
 -- Parse a string, return the entire result
 parseDefault :: Parser a -> String -> Either State (a, State)
-parseDefault p s = parse p defaultState
+parseDefault p s = runParser p defaultState
   where defaultState = State { input = s, line = 1, col = 1 }
 
 -- Parse a given string, discard the state on success
-parseString :: Show a => Parser a -> String -> Either String a
-parseString p s = discard $ parseFile' p "ghci" s
+parse :: Show a => Parser a -> String -> Either String a
+parse p s = discard $ parseFile' p "ghci" s
 
 -- Parse a given file, discard the state on success
 parseFile :: Show a => Parser a -> FilePath -> IO (Either String a)

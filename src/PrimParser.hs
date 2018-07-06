@@ -5,17 +5,17 @@
 -}
 
 module PrimParser (
-  Parser (parse), State (..),
-  fail, item, many, some, lookahead
+  Parser (runParser), State (..),
+  fail, item, lookahead,
+  empty, (<|>), many, some
 ) where
 
 import Prelude hiding (fail, until)
-import Data.Bool (bool)
 import Control.Applicative (Alternative, empty, (<|>), many, some)
-import Control.Monad (ap, void)
+import Control.Monad (ap)
 
 newtype Parser a = P {
-  parse :: State -> Either State (a, State)
+  runParser :: State -> Either State (a, State)
 }
 
 data State = State {
@@ -37,15 +37,15 @@ instance Applicative Parser where
 instance Alternative Parser where
   empty = P $ \st -> Left st
   p <|> q = P $ \st ->
-    case parse p st of
-      Left _ -> parse q st
+    case runParser p st of
+      Left _ -> runParser q st
       x -> x
 
 instance Monad Parser where
   return = pure
   p >>= f = P $ \st ->
-    case parse p st of
-      Right (x, st) -> parse (f x) st
+    case runParser p st of
+      Right (x, st') -> runParser (f x) st'
       Left err -> Left err
 
 -- |Take a single character from the input
@@ -59,8 +59,8 @@ item = P $ \st ->
 -- |Succeed if the given parser fails
 fail :: Parser a -> Parser ()
 fail p = P $ \st ->
-  case parse p st of
-    Left err -> Right ((), st)
+  case runParser p st of
+    Left _ -> Right ((), st)
     _ -> Left st
 
 -- |Parse with the given parser, but do not change the state

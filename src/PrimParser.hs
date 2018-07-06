@@ -1,3 +1,9 @@
+{- |
+    The most primitive parsers, these
+    are mostly implemented directly with
+    the parser constructor.
+-}
+
 module PrimParser (
   Parser (parse), State (..),
   fail, item, many, some, lookahead
@@ -42,6 +48,7 @@ instance Monad Parser where
       Right (x, st) -> parse (f x) st
       Left err -> Left err
 
+-- |Take a single character from the input
 item :: Parser Char
 item = P $ \st ->
   case input st of
@@ -49,18 +56,17 @@ item = P $ \st ->
     (x:xs) -> Right (x, st {input = xs, col = col st + 1})
     [] -> Left st
 
+-- |Succeed if the given parser fails
 fail :: Parser a -> Parser ()
 fail p = P $ \st ->
   case parse p st of
     Left err -> Right ((), st)
     _ -> Left st
 
-getState :: Parser State
-getState = P $ \st -> Right (st, st)
-
-setState :: State -> Parser ()
-setState st = P $ const $ Right ((), st)
-
+-- |Parse with the given parser, but do not change the state
 lookahead :: Parser a -> Parser a
 lookahead p = getState >>= (p <*) . setState
+  where
+    getState = P $ \st -> Right (st, st)
+    setState st = P $ const $ Right ((), st)
 

@@ -1,6 +1,8 @@
 module LambadaParser (
-  module Parser,
-  module LambadaParser
+  parse,
+  parseFile,
+  program,
+  Expr (..)
 ) where
 
 import Parser
@@ -14,16 +16,17 @@ data Expr
   | If Expr Expr Expr
   | App Expr Expr
   | Abs String Expr
+  deriving (Eq, Show)
 
-instance Show Expr where
-  show (I i) = show i
-  show (S s) = show s
-  show (B b) = show b
-  show (Var s) = s
-  show (Def s a b) = "let " ++ s ++ " = " ++ show a ++ " in\n" ++ show b
-  show (If e l r) = "if " ++ show e ++ " then " ++ show l ++ " else " ++ show r
-  show (App f x) = "(" ++ show f ++ " " ++ show x ++ ")"
-  show (Abs s e) = "\\" ++ s ++ " . " ++ show e
+-- instance Show Expr where
+--   show (I i) = show i
+--   show (S s) = show s
+--   show (B b) = show b
+--   show (Var s) = s
+--   show (Def s a b) = "let " ++ s ++ " = " ++ show a ++ " in\n" ++ show b
+--   show (If e l r) = "if " ++ show e ++ " then " ++ show l ++ " else " ++ show r
+--   show (App f x) = "(" ++ show f ++ " " ++ show x ++ ")"
+--   show (Abs s e) = "\\" ++ s ++ " . " ++ show e
 
 keyword :: Parser String
 keyword = oneOf $ string <$> ["if", "then", "else", "let", "in", "="]
@@ -31,7 +34,7 @@ keyword = oneOf $ string <$> ["if", "then", "else", "let", "in", "="]
 type Program = Expr
 
 program :: Parser Program
-program = spaces >> def
+program = spaces >> def <|> expr
 
 def :: Parser Expr
 def = Def <$> letPart <*> eqPart <*> inPart

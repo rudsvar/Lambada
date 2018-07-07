@@ -2,3 +2,5 @@
 lambada.cabal
 *~
 Session.vim
+.undodir
+

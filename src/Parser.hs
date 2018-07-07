@@ -11,7 +11,7 @@ import GenericParser
 -- Parse a string, return the entire result
 parseDefault :: Parser a -> String -> Either State (a, State)
 parseDefault p s = runParser p defaultState
-  where defaultState = State { input = s, line = 1, col = 1, label = Nothing }
+  where defaultState = State { input = s, line = 1, col = 1, expected = Nothing }
 
 -- Parse a given string, discard the state on success
 parse :: Show a => Parser a -> String -> Either String a

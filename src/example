@@ -1,0 +1,9 @@
+// Factorial function
+
+let fix = \f -> (\x -> f (x x)) (\x -> f (x x)) in
+let sub = \x -> \y -> add x (neg y)
+let dec = \x -> sub x 1
+let fac = fix (\f -> \x -> if eq 0 x then 1 else * x (f (dec x))) in
+let calculate = \x -> x
+
+calculate (fac 5)

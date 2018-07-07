@@ -4,13 +4,14 @@
 
 module GenericParser (
   module GenericParser,
-  module PrimParser
+  module PrimParser,
+  Control.Monad.void
 ) where
 
 import PrimParser
 
 import Prelude hiding (until)
-import Data.Char (isLetter, isDigit, isAlphaNum)
+import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
 import Data.Bool (bool)
 import Control.Applicative ((<|>), empty, many, some)
 import Control.Monad (void)
@@ -22,30 +23,30 @@ sat p = p <$> lookahead item >>= bool empty item
 noSat p = sat (not . p)
 
 letter, digit, alphaNum :: Parser Char
-letter   = setLabelIfNone "letter" $ sat isLetter
-digit    = setLabelIfNone "digit" $ sat isDigit
-alphaNum = setLabelIfNone "alphaNum" $ sat isAlphaNum
+letter   = expectIfNone "letter" $ sat isLetter
+digit    = expectIfNone "digit" $ sat isDigit
+alphaNum = expectIfNone "alphaNum" $ sat isAlphaNum
 
 char :: Char -> Parser Char
-char c = setLabel ("char " ++ show c) $ lexeme $ sat (==c)
+char c = expectIfNone ("char " ++ show c) $ lexeme $ sat (==c)
 
 notChar :: Char -> Parser ()
-notChar c = void $ setLabel ("not char " ++ show c) $ sat (/=c)
+notChar c = void $ expect ("not char " ++ show c) $ sat (/=c)
 
 -- String and integer parsers
 
 string :: String -> Parser String
-string = setLabel "string" . lexeme . string'
+string s = expect ("string " ++ s) $ lexeme $ string' s
   where
     string' [] = empty
     string' [c] = (:[]) <$> char c
     string' (c:str) = (:) <$> char c <*> string str
 
 intLit :: Parser Integer
-intLit = setLabel "integer literal" $ lexeme $ read <$> some digit <* (addLabel ("no letter after "++) $ mustFail letter)
+intLit = expect "integer literal" $ lexeme $ read <$> some digit <* (changeExpected ("no letter after "++) $ mustFail letter)
 
 identifier :: Parser String
-identifier = setLabel "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
+identifier = expect "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
 
 -- Select from options
 
@@ -56,8 +57,22 @@ noneOf :: [Parser a] -> Parser ()
 noneOf xs = foldr ((>>) . mustFail) (pure ()) xs
 
 oneOfChar, noneOfChar :: [Char] -> Parser Char
-oneOfChar cs = setLabel ("one of " ++ show cs) $ lexeme $ sat (`elem` cs)
-noneOfChar cs = setLabel ("none of " ++ show cs) $ lexeme $ sat (not . (`elem` cs))
+oneOfChar cs = expect ("one of " ++ show cs) $ lexeme $ sat (`elem` cs)
+noneOfChar cs = expect ("none of " ++ show cs) $ lexeme $ sat (not . (`elem` cs))
+
+-- Separators
+
+sepBy :: Parser a -> Parser b -> Parser [a]
+sepBy p q = (:) <$> p <*> ((q >> sepBy p q) <|> pure [])
+
+commaSep :: Parser a -> Parser [a]
+commaSep p = p `sepBy` char ','
+
+list :: Parser a -> Parser [a]
+list = brackets . commaSep
+
+tuple :: Parser a -> Parser [a]
+tuple = parens . commaSep
 
 -- Parse multiple tokens
 
@@ -94,19 +109,19 @@ lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
 space, spaces :: Parser ()
-space = void (oneOfChar " \t") <|> comment
+space = void (sat isSpace) <|> comment
 spaces = void $ many space
 
 comment :: Parser ()
 comment = lineComment <|> blockComment
 
 lineComment, blockComment :: Parser ()
-lineComment = void $ between (string begin) (setLabel "a" $ string end) $ setLabel endStr $ skipUntil (string end)
+lineComment = void $ between (string begin) (string end) $ expect endStr $ skipUntil (string end)
   where begin = "//"; end = "\n"; endStr = "end of line comment: " ++ show end;
-blockComment = between (string begin) (string end) $ setLabel endStr $ skipUntil (string end)
+blockComment = between (string begin) (string end) $ expect endStr $ skipUntil (string end)
   where begin = "/*"; end = "*/"; endStr = "end of block comment: " ++ show end;
 
 newLine, eof :: Parser ()
-eof = setLabel "end of file" $ mustFail (setLabel "a" item)
-newLine = setLabel "newline" $ void $ char '\n'
+eof = expect "end of file" $ mustFail (expect "a" item)
+newLine = expect "newline" $ void $ char '\n'
 

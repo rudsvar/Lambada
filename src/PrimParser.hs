@@ -6,7 +6,7 @@
 
 module PrimParser (
   Parser (runParser), State (..),
-  setLabel, setLabelIfNone, clearLabel, addLabel, modifyLabel,
+  expect, expectIfNone, clearExpected, changeExpected,
   mustFail, item, lookahead, notFollowedBy,
   empty, (<|>), many, some
 ) where
@@ -23,13 +23,13 @@ data State = State {
   input :: String,
   line :: Int,
   col :: Int,
-  label :: Maybe String
+  expected :: Maybe String
 }
 
 instance Show State where
-  show st = "Expected\n> " ++ pp (label st) ++ "\nActual\n> " ++ reason
+  show st = "Expected\n> " ++ pp (expected st) ++ "\nActual\n> " ++ reason
     where
-      pp = maybe "<no label>" id
+      pp = maybe "<no expected>" id
       reason
         | null (input st) = "Unexpected end of input"
         | otherwise = show (input st)
@@ -61,20 +61,20 @@ item = P $ \st ->
     (x:xs) -> Right (x, st {input = xs, col = col st + 1})
     [] -> Left st
 
-modifyLabel :: (Maybe String -> Maybe String) -> Parser a -> Parser a
-modifyLabel f p = getState >>= setState' >> p
-  where setState' st = setState $ st { label = f (label st) }
+changeExpectedMaybe :: (Maybe String -> Maybe String) -> Parser a -> Parser a
+changeExpectedMaybe f p = getState >>= setState' >> p
+  where setState' st = setState $ st { expected = f (expected st) }
 
-addLabel :: (String -> String) -> Parser a -> Parser a
-addLabel = modifyLabel . fmap
+changeExpected :: (String -> String) -> Parser a -> Parser a
+changeExpected = changeExpectedMaybe . fmap
 
-setLabel, setLabelIfNone :: String -> Parser a -> Parser a
-setLabel s = modifyLabel $ const (Just s)
-setLabelIfNone s = modifyLabel f
+expect, expectIfNone :: String -> Parser a -> Parser a
+expect s = changeExpectedMaybe $ const (Just s)
+expectIfNone s = changeExpectedMaybe f
   where f l = if l == Nothing then Just s else l
 
-clearLabel :: Parser a -> Parser a
-clearLabel = modifyLabel (const Nothing)
+clearExpected :: Parser a -> Parser a
+clearExpected = changeExpectedMaybe (const Nothing)
 
 -- |Succeed if the given parser fails
 mustFail :: Parser a -> Parser ()

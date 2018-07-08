@@ -6,6 +6,8 @@ module LambadaParser (
 ) where
 
 import Parser
+import Prelude hiding (lines)
+import Data.Char
 
 data Expr
   = I Integer
@@ -34,13 +36,13 @@ keyword = oneOf $ string <$> ["if", "then", "else", "let", "in", "="]
 type Program = Expr
 
 program :: Parser Program
-program = spaces >> def <|> expr
+program = skipLines >> def <|> expr
+
+skipLines :: Parser ()
+skipLines = void $ many $ void (sat isSpace) <|> void (char '\n') <|> space
 
 def :: Parser Expr
-def = Def <$> letPart <*> eqPart <*> inPart
-  where letPart = string "let" >> identifier
-        eqPart = string "=" >> expr
-        inPart = string "in" <|> string ";" >> expr
+def = Def <$> identifier <*> (char '=' *> expr) <*> (some (char '\n') *> expr) <* skipLines
 
 expr :: Parser Expr
 expr = foldl App <$> val <*> args

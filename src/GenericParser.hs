@@ -63,16 +63,26 @@ noneOfChar cs = expect ("none of " ++ show cs) $ lexeme $ sat (not . (`elem` cs)
 -- Separators
 
 sepBy :: Parser a -> Parser b -> Parser [a]
-sepBy p q = (:) <$> p <*> ((q >> sepBy p q) <|> pure [])
+sepBy p q = cont <|> end
+  where
+    cont = (:) <$> p <*> ((q *> cont) <|> end)
+    end = pure []
+
+-- sep :: lit sep' | []
+-- sep' = , lit sep
+
+semi, comma :: Parser Char
+semi = char ';'
+comma = char ','
 
 commaSep :: Parser a -> Parser [a]
-commaSep p = p `sepBy` char ','
+commaSep p = p `sepBy` comma
 
 list :: Parser a -> Parser [a]
-list = brackets . commaSep
+list elem = expectIfNone "list" $ brackets $ commaSep elem
 
 tuple :: Parser a -> Parser [a]
-tuple = parens . commaSep
+tuple elem = expectIfNone "tuple" $ parens $ commaSep elem
 
 -- Parse multiple tokens
 
@@ -109,7 +119,7 @@ lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
 space, spaces :: Parser ()
-space = void (sat isSpace) <|> comment
+space = void (char ' ') <|> comment
 spaces = void $ many space
 
 comment :: Parser ()

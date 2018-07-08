@@ -35,22 +35,14 @@ eval env (If e a b)
 eval env (Abs s e) = pure $ Closure env s e
 
 -- UnOps
-eval env (App (Var "min") e) | Right (IVal i) <- eval env e = pure $ IVal (-i)
+eval env (App (Var "neg") e) | Right (IVal i) <- eval env e = pure $ IVal (-i)
 eval env (App (Var "not") e) | Right (BVal b) <- eval env e = pure $ BVal (not b)
 
 -- BinOps
-eval env (App (App (Var f) a) b) | f `elem` ["add", "mul", "div", "lt", "lte", "gt", "gte"] = intBinOp env f a b
+eval env (App (App (Var f) a) b) | f `elem` ["add", "sub", "mul", "div", "lt", "lte", "gt", "gte"] = intBinOp env f a b
 eval env (App (App (Var f) a) b) | f `elem` ["or", "and"] = boolBinOp env f a b
 eval env (App (App (Var f) a) b) | f `elem` ["eq"] = ((BVal .) . (==)) <$> eval env a <*> eval env b
 
-eval env (App (App (Var "add") a) b)
-  | Right (IVal a') <- eval env a
-  , Right (IVal b') <- eval env b
-  = pure $ IVal (a' + b')
-eval env (App (App (Var "mul") a) b)
-  | Right (IVal a') <- eval env a
-  , Right (IVal b') <- eval env b
-  = pure $ IVal (a' * b')
 eval env (App f x)
   | Right (Closure cloEnv s e) <- eval env f = eval ((s, x) : (cloEnv ++ env)) e
   | Right val <- eval env f = fail $ show f ++ " must evaluate to closure, but got value\n" ++ show val
@@ -71,7 +63,9 @@ intBinOp env op a b
   where
     f = case op of
       "add" -> \x y -> IVal (x+y)
+      "sub" -> \x y -> IVal (x-y)
       "mul" -> \x y -> IVal (x*y)
+      "div" -> \x y -> IVal (div x y)
       "lt"  -> \x y -> BVal (x<y)
       "lte" -> \x y -> BVal (x<=y)
       "gt"  -> \x y -> BVal (x>y)

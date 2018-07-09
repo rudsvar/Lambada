@@ -65,7 +65,7 @@ binOp = (string "+" <|> string "add" >> pure (PrimBinInt (+)))
     <|> (string ">=" <|> string "gte" >> pure (PrimCmp (>=)))
 
 ifExpr :: Parser Expr
-ifExpr = expectIfNone "if-expression" $ normalIf <|> inlineIf
+ifExpr = expect "if-expression" $ normalIf <|> inlineIf
   where
     normalIf = If <$> (string "if" >> expr) <*> (string "then" >> expr) <*> (string "else" >> expr)
     inlineIf = If <$> (string "if" *> parens expr) <*> parens expr <*> parens expr

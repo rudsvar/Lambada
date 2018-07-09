@@ -6,12 +6,13 @@
 
 module PrimParser (
   Parser (runParser), State (..),
-  expect, expectIfNone, clearExpected, changeExpected,
+  expect,
   mustFail, item, lookahead, notFollowedBy,
   empty, (<|>), many, some
 ) where
 
 import Prelude hiding (until)
+import Data.List
 import Control.Applicative (Alternative, empty, (<|>), many, some)
 import Control.Monad (ap)
 
@@ -19,20 +20,20 @@ newtype Parser a = P {
   runParser :: State -> Either State (a, State)
 }
 
+type Label = String
+type Input = String
+type Expectation = (Label, Input)
+
 data State = State {
-  input :: String,
+  input :: Input,
   line :: Int,
   col :: Int,
-  expected :: Maybe String
+  expected :: [Expectation]
 }
 
 instance Show State where
-  show st = "Expected\n> " ++ pp (expected st) ++ "\nActual\n> " ++ reason
-    where
-      pp = maybe "<no expected>" id
-      reason
-        | null (input st) = "Unexpected end of input"
-        | otherwise = show (input st)
+  show st = intercalate "\n" $ map format $ reverse (expected st)
+    where format (label, inp) = "| Expected " ++ label ++ " from input: " ++ show inp
 
 instance Functor Parser where
   fmap f p = p >>= pure . f
@@ -61,20 +62,11 @@ item = P $ \st ->
     (x:xs) -> Right (x, st {input = xs, col = col st + 1})
     [] -> Left st
 
-changeExpectedMaybe :: (Maybe String -> Maybe String) -> Parser a -> Parser a
-changeExpectedMaybe f p = getState >>= setState' >> p
-  where setState' st = setState $ st { expected = f (expected st) }
-
-changeExpected :: (String -> String) -> Parser a -> Parser a
-changeExpected = changeExpectedMaybe . fmap
-
-expect, expectIfNone :: String -> Parser a -> Parser a
-expect s = changeExpectedMaybe $ const (Just s)
-expectIfNone s = changeExpectedMaybe f
-  where f l = if l == Nothing then Just s else l
-
-clearExpected :: Parser a -> Parser a
-clearExpected = changeExpectedMaybe (const Nothing)
+expect :: String -> Parser a -> Parser a
+expect s p = do
+  st <- getState
+  setState (st { expected = (s, input st) : expected st })
+  p
 
 -- |Succeed if the given parser fails
 mustFail :: Parser a -> Parser ()

@@ -23,27 +23,27 @@ sat p = p <$> lookahead item >>= bool empty item
 noSat p = sat (not . p)
 
 letter, digit, alphaNum :: Parser Char
-letter   = expectIfNone "letter" $ sat isLetter
-digit    = expectIfNone "digit" $ sat isDigit
-alphaNum = expectIfNone "alphaNum" $ sat isAlphaNum
+letter   = expect "letter" $ sat isLetter
+digit    = expect "digit" $ sat isDigit
+alphaNum = expect "alphaNum" $ sat isAlphaNum
 
 char :: Char -> Parser Char
-char c = expectIfNone ("char " ++ show c) $ lexeme $ sat (==c)
+char c = expect ("char " ++ show c) $ lexeme $ sat (==c)
 
 notChar :: Char -> Parser ()
-notChar c = void $ expect ("not char " ++ show c) $ sat (/=c)
+notChar c = expect ("not char " ++ show c) $ void $ sat (/=c)
 
 -- String and integer parsers
 
 string :: String -> Parser String
-string s = expectIfNone ("string " ++ s) $ lexeme $ string' s
+string s = expect ("string " ++ show s) $ lexeme $ string' s
   where
     string' [] = empty
     string' [c] = (:[]) <$> char c
     string' (c:str) = (:) <$> char c <*> string str
 
 intLit :: Parser Integer
-intLit = expect "integer literal" $ lexeme $ read <$> some digit <* (changeExpected ("no letter after "++) $ mustFail letter)
+intLit = expect "integer literal" $ lexeme $ read <$> some digit <* mustFail letter
 
 identifier :: Parser String
 identifier = expect "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
@@ -72,10 +72,10 @@ commaSep :: Parser a -> Parser [a]
 commaSep p = p `sepBy` char ','
 
 list :: Parser a -> Parser [a]
-list e = expectIfNone "list" $ brackets $ commaSep e
+list e = expect "list" $ brackets $ commaSep e
 
 tuple :: Parser a -> Parser [a]
-tuple e = expectIfNone "tuple" $ parens $ commaSep e
+tuple e = expect "tuple" $ parens $ commaSep e
 
 -- Parse multiple tokens
 
@@ -98,13 +98,13 @@ between :: Parser a -> Parser b -> Parser c -> Parser c
 between begin end p = begin *> p <* end
 
 strLit :: Parser String
-strLit = between (string "\"") (string "\"") (many (sat (/='"')))
+strLit = expect "string literal" $ between (string "\"") (string "\"") (many (sat (/='"')))
 
 parens, maybeParens, brackets, braces :: Parser a -> Parser a
-parens = between (char '(') (char ')')
+parens = expect "parens" . between (char '(') (char ')')
 maybeParens p = parens p <|> p
-brackets = between (char '[') (char ']')
-braces = between (char '{') (char '}')
+brackets = expect "brackets" . between (char '[') (char ']')
+braces = expect "braces" . between (char '{') (char '}')
 
 -- Whitespace related
 
@@ -116,13 +116,13 @@ space = void (char ' ') <|> comment
 spaces = void $ many space
 
 comment :: Parser ()
-comment = lineComment <|> blockComment
+comment = expect "comment" $ lineComment <|> blockComment
 
 lineComment, blockComment :: Parser ()
-lineComment = void $ between (string begin) (string end) $ expect endStr $ skipUntil (string end)
-  where begin = "//"; end = "\n"; endStr = "end of line comment: " ++ show end;
-blockComment = between (string begin) (string end) $ expect endStr $ skipUntil (string end)
-  where begin = "/*"; end = "*/"; endStr = "end of block comment: " ++ show end;
+lineComment = expect "lineComment" $ void $ between (string begin) (string end) $ some (notChar '\n')
+  where begin = "//"; end = "\n";
+blockComment = expect "blockComment" $ between (string begin) (string end) $ skipUntil (string end)
+  where begin = "/*"; end = "*/";
 
 newLine, eof :: Parser ()
 eof = expect "end of file" $ mustFail (expect "a" item)

@@ -17,6 +17,12 @@ evalLambadaTest s =
         Left err -> putStrLn err
         Right y -> print y
 
+defaultEnv :: Env
+defaultEnv = map (\(x,y) -> (x, unsafeParse y)) $
+  [ ("true", "\\x -> \\y -> x")
+  , ("false", "\\x -> \\y -> y")
+  ]
+
 evalLambadaFileTest :: FilePath -> IO ()
 evalLambadaFileTest f = readFile f >>= evalLambadaTest
 
@@ -32,28 +38,35 @@ eval env (If e a b)
 eval env (Abs s e) = pure $ Closure env s e
 
 -- PrimFuns
-eval env (App (PrimUn f) e)
+eval env (App (PrimUnInt f) e)
   | Right (IVal i) <- eval env e
   = pure $ IVal (f i)
-eval env (App (App (PrimBin f) a) b)
+eval env (App (PrimUnBool f) e)
+  | Right (BVal b) <- eval env e
+  = pure $ BVal (f b)
+eval env (App (App (PrimBinInt f) a) b)
   | Right (IVal x) <- eval env a
   , Right (IVal y) <- eval env b
   = pure $ IVal (f x y)
-eval env (App (App (PrimCmp cmp) a) b)
+eval env (App (App (PrimBinBool f) a) b)
+  | Right (BVal x) <- eval env a
+  , Right (BVal y) <- eval env b
+  = pure $ BVal (f x y)
+eval env (App (App (PrimCmp f) a) b)
   | Right (IVal x) <- eval env a
   , Right (IVal y) <- eval env b
-  = pure $ BVal (cmp x y)
+  = pure $ BVal (f x y)
 
 -- PrimFun errors
-eval _ (PrimUn _)          = fail $ "Missing argument to unary operator, or wrong type."
-eval _ (App (PrimBin _) _) = fail $ "Missing one argument to binary operator, or wrong type."
-eval _ (PrimBin _)         = fail $ "Missing two argument to binary operator, or wrong type."
-eval _ (App (PrimCmp _) _) = fail $ "Missing one argument to comparator, or wrong type"
-eval _ (PrimCmp _)         = fail $ "Missing two argument to comparator, or wrong type"
+eval _ f@(PrimUnInt _)   = fail $ "Error " ++ show f
+eval _ f@(PrimUnBool _)  = fail $ "Error " ++ show f
+eval _ f@(PrimBinInt _)  = fail $ "Error " ++ show f
+eval _ f@(PrimBinBool _) = fail $ "Error " ++ show f
+eval _ f@(PrimCmp _)     = fail $ "Error " ++ show f
 
 eval env (App f arg)
   | Right (Closure cloEnv s e) <- eval env f = eval (cloEnv ++ (s, arg) : env) e
-  | Right val <- eval env f = fail $ show f ++ " must evaluate to closure (function), but got value\n" ++ show val
+  | Right val <- eval env f = fail $ show f ++ " must evaluate to closure (function)\nbut got value: " ++ show val
 
 eval env (Var v)
   | Just e <- lookup v env = eval env e

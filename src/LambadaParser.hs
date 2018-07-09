@@ -4,7 +4,7 @@ module LambadaParser (
   parseLambadaTest,
   parseLambadaFile,
   parseLambadaFileTest,
-  program,
+  unsafeParse
 ) where
 
 import Parser
@@ -21,6 +21,9 @@ parseLambadaFileTest = parseFileTest program
 
 parseLambada :: String -> Either String Expr
 parseLambada = parse program
+
+unsafeParse :: String -> Expr
+unsafeParse s = either error id $ parse program s
 
 parseLambadaFile :: String -> IO (Either String Expr)
 parseLambadaFile = parseFile program
@@ -45,19 +48,24 @@ expr = foldl App <$> val <*> args
   where args = many val
 
 val :: Parser Expr
-val = parens expr <|> lambda <|> op <|> int <|> str <|> inlineDef <|> def <|> var
+val = parens expr <|> lambda <|> op <|> ifExpr <|> inlineDef <|> def <|> int <|> str <|> bool <|> var
 
 op, unOp, binOp :: Parser Expr
 op = unOp <|> binOp
-unOp = string "-" <|> string "neg" >> pure (PrimUn negate)
-binOp = (string "+" <|> string "add" >> pure (PrimBin (+)))
-    <|> (string "*" <|> string "mul" >> pure (PrimBin (*)))
+unOp = (string "-" <|> string "neg" >> pure (PrimUnInt negate))
+   <|> (string "!" <|> string "!"   >> pure (PrimUnBool not))
+binOp = (string "+" <|> string "add" >> pure (PrimBinInt (+)))
+    <|> (string "*" <|> string "mul" >> pure (PrimBinInt (*)))
+    <|> (string "&&" <|> string "and" >> pure (PrimBinBool (&&)))
+    <|> (string "||" <|> string "or" >> pure (PrimBinBool (||)))
     <|> (string "==" <|> string "eq" >> pure (PrimCmp (==)))
     <|> (string "<" <|> string "lt" >> pure (PrimCmp (<)))
+    <|> (string "<=" <|> string "lte" >> pure (PrimCmp (<=)))
     <|> (string ">" <|> string "gt" >> pure (PrimCmp (>)))
+    <|> (string ">=" <|> string "gte" >> pure (PrimCmp (>=)))
 
 ifExpr :: Parser Expr
-ifExpr = normalIf <|> inlineIf
+ifExpr = expectIfNone "if-expression" $ normalIf <|> inlineIf
   where
     normalIf = If <$> (string "if" >> expr) <*> (string "then" >> expr) <*> (string "else" >> expr)
     inlineIf = If <$> (string "if" *> parens expr) <*> parens expr <*> parens expr
@@ -65,8 +73,9 @@ ifExpr = normalIf <|> inlineIf
 lambda :: Parser Expr
 lambda = Abs <$> (char '\\' >> identifier) <*> (string "." <|> string "->" >> expr)
 
-int, str, bool, var :: Parser Expr
+int, str, bool, var, keyword :: Parser Expr
 int = I <$> intLit
 str = S <$> strLit
 bool = B <$> ((string "true" >> pure True) <|> (string "false" >> pure False))
-var = op <|> Var <$> (identifier)
+var = op <|> Var <$> (mustFail keyword >> identifier)
+keyword = Var <$> oneOf (string <$> ["if", "then", "else"])

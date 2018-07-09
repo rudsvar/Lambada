@@ -11,7 +11,7 @@ module GenericParser (
 import PrimParser
 
 import Prelude hiding (until)
-import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
+import Data.Char (isLetter, isDigit, isAlphaNum)
 import Data.Bool (bool)
 import Control.Applicative ((<|>), empty, many, some)
 import Control.Monad (void)
@@ -36,7 +36,7 @@ notChar c = void $ expect ("not char " ++ show c) $ sat (/=c)
 -- String and integer parsers
 
 string :: String -> Parser String
-string s = expect ("string " ++ s) $ lexeme $ string' s
+string s = expectIfNone ("string " ++ s) $ lexeme $ string' s
   where
     string' [] = empty
     string' [c] = (:[]) <$> char c
@@ -72,10 +72,10 @@ commaSep :: Parser a -> Parser [a]
 commaSep p = p `sepBy` char ','
 
 list :: Parser a -> Parser [a]
-list elem = expectIfNone "list" $ brackets $ commaSep elem
+list e = expectIfNone "list" $ brackets $ commaSep e
 
 tuple :: Parser a -> Parser [a]
-tuple elem = expectIfNone "tuple" $ parens $ commaSep elem
+tuple e = expectIfNone "tuple" $ parens $ commaSep e
 
 -- Parse multiple tokens
 

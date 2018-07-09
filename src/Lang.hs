@@ -9,9 +9,14 @@ data Expr
   | If Expr Expr Expr
   | App Expr Expr
   | Abs String Expr
-  | PrimUn (Integer -> Integer)
-  | PrimBin (Integer -> Integer -> Integer)
-  | PrimCmp (Integer -> Integer -> Bool)
+  | PrimUnInt (PrimUn Integer)
+  | PrimUnBool (PrimUn Bool)
+  | PrimBinInt (PrimBin Integer Integer)
+  | PrimBinBool (PrimBin Bool Bool)
+  | PrimCmp (PrimBin Integer Bool)
+
+type PrimUn a = (a -> a)
+type PrimBin a b = (a -> a -> b)
 
 instance Show Expr where
   show (I i) = show i
@@ -22,20 +27,17 @@ instance Show Expr where
   show (If e l r) = "if " ++ show e ++ " then " ++ show l ++ " else " ++ show r
   show (App f x) = "(" ++ show f ++ " " ++ show x ++ ")"
   show (Abs s e) = "\\" ++ s ++ " -> " ++ show e
-  show (PrimUn _) = "<unop>"
-  show (PrimBin _) = "<binop>"
-  show (PrimCmp _) = "<cmp>"
+  show (PrimUnInt _) = "<Int -> Int>"
+  show (PrimUnBool _) = "<Bool -> Bool>"
+  show (PrimBinInt _) = "<Int -> Int -> Int>"
+  show (PrimBinBool _) = "<Bool -> Bool -> Bool>"
+  show (PrimCmp _) = "<Int -> Int -> Bool>"
 
 instance Eq Expr where
-  PrimUn _ == _  = error "Can not use eq on functions"
-  _ == PrimUn _  = error "Can not use eq on functions"
-  PrimBin _ == _ = error "Can not use eq on functions"
-  _ == PrimBin _ = error "Can not use eq on functions"
-  PrimCmp _ == _ = error "Can not use eq on functions"
-  _ == PrimCmp _ = error "Can not use eq on functions"
   I x == I y = x == y
   S x == S y = x == y
-  a == b = error $ "eq not implemented for " ++ show a ++ " and " ++ show b
+  B x == B y = x == y
+  _ == _ = error $ "eq can only be used on evaluated values"
 
 type Env = [(String, Expr)]
 

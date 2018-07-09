@@ -1,4 +1,13 @@
-// Factorial function
+// Cool comment
 
-x = 10
-x
+true = \x . \y . x
+false = \x . \y . y
+if = \p . \x . p x
+not = \p . if p false true
+and = \p . \q . if p q false
+or = \p . \q . if p true q
+
+evb = \x -> x "true" "false"
+expr = not true
+
+evb expr

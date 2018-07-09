@@ -68,15 +68,8 @@ sepBy p q = cont <|> end
     cont = (:) <$> p <*> ((q *> cont) <|> end)
     end = pure []
 
--- sep :: lit sep' | []
--- sep' = , lit sep
-
-semi, comma :: Parser Char
-semi = char ';'
-comma = char ','
-
 commaSep :: Parser a -> Parser [a]
-commaSep p = p `sepBy` comma
+commaSep p = p `sepBy` char ','
 
 list :: Parser a -> Parser [a]
 list elem = expectIfNone "list" $ brackets $ commaSep elem

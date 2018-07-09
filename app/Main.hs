@@ -2,19 +2,22 @@ module Main where
 
 import Lambada
 
-import System.Environment
-import System.IO
-import Control.Monad
+import System.Environment (getArgs)
+import System.IO (hFlush, stdout)
+import Control.Monad (forever)
+import Data.List (intercalate)
 
 main :: IO ()
 main = do
-  hSetBuffering stdin NoBuffering
   args <- getArgs
   case args of
     [] -> interpreter
     [file] -> evalLambadaFileTest file
     ["-e",str] -> evalLambadaTest str
-    _ -> putStrLn "Usage:\n\tNo arguments: Lambada interpreter\n\tOne argument: evaluate a file\n\t-e \"<input string>\" to evaluate a string"
+    _ -> putStrLn $ intercalate "\n\t"
+      [ "Usage:", "No arguments: Interpreter"
+      , "One argument: Evaluate a file"
+      , "-e \"<input>\" to evaluate a string" ]
 
 interpreter :: IO ()
 interpreter = forever $ do

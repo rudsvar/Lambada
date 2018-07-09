@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -f "$1" ]; then
+    stack exec lambada-exe -- $1
+else
+    stack exec lambada-exe -- -e "$@"
+fi
+

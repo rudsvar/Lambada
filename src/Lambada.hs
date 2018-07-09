@@ -70,7 +70,7 @@ eval env (App f arg)
 
 eval env (Var v)
   | Just e <- lookup v env = eval env e
-  | otherwise = fail $ "Variable " ++ show v ++ " not in scope."
+  | otherwise = Left $ "Variable " ++ show v ++ " not in scope."
 
 eval env e | Right x <- eval env e = fail $ "Tried to eval " ++ show e ++ ", and got wrong type " ++ show x
 eval env e | Left err <- eval env e = fail $ "Tried to eval " ++ show e ++ ", but got error " ++ err

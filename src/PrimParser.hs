@@ -6,7 +6,7 @@
 
 module PrimParser (
   Parser (runParser), State (..),
-  expect, clearExpect, getState, setState,
+  expect, clearExpect, modLast, getState, setState,
   mustFail, item, lookahead, notFollowedBy,
   empty, (<|>), many, some
 ) where
@@ -32,13 +32,12 @@ data State = State {
 }
 
 instance Show State where
-  show st = intercalate "\n" $ map combine $ indent 0 $ map format $ reverse (expected st)
+  show st = intercalate "\n" $ map combine $ indent [0] $ map format $ reverse (expected st)
     where combine (label, inp) = label ++ show inp
-          format (label, inp) = ("\\ Expected " ++ label ++ " in input ", inp)
-          indent i ((s1, inp1):(s2, inp2):xs)
-            | length inp1 >= length inp2
-            = (s1, inp1) : indent (i+1) ((concat (replicate (i+1) " ") ++ s2, inp2):xs)
-            | otherwise = (s1, inp1) : indent 0 ((s2, inp2) : xs)
+          format (label, inp) = ("> Expected " ++ label ++ " in input ", inp)
+          indent (i:is) ((s1, inp1):(s2, inp2):xs)
+            | length inp1 < length inp2 = (s1, inp1) : indent is ((s2, inp2) : xs)
+            | otherwise = (s1, inp1) : indent (i+1:is) ((concat (replicate (i+1) "  ") ++ s2, inp2):xs)
           indent _ x = x
 
 instance Functor Parser where
@@ -103,6 +102,14 @@ editState f = f <$> getState >>= setState
 expect :: String -> Parser a -> Parser a
 expect s p = editState prependLabel >> p
   where prependLabel st = st { expected = (s, input st) : expected st }
+
+-- TODO Rewrite?
+modLast :: (String -> String) -> Parser a -> Parser a
+modLast f p = editState test >> p
+  where
+    test st
+      | ((a, b):xs) <- expected st = st { expected = (f a, b) : xs }
+      | otherwise = st
 
 clearExpect :: Parser a -> Parser a
 clearExpect p = P $ \st ->

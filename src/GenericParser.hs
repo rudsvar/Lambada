@@ -28,10 +28,10 @@ digit    = expect "digit" $ sat isDigit
 alphaNum = expect "alphaNum" $ sat isAlphaNum
 
 char :: Char -> Parser Char
-char c = expect ("char " ++ show c) $ lexeme $ sat (==c)
+char c = expect ("char " ++ show c) $ sat (==c)
 
 notChar :: Char -> Parser ()
-notChar c = expect ("not char " ++ show c) $ void $ sat (/=c)
+notChar c = void $ mustFail (char c)
 
 -- String and integer parsers
 
@@ -43,7 +43,7 @@ string s = expect ("string " ++ show s) $ lexeme $ string' s
     string' (c:str) = (:) <$> char c <*> string str
 
 intLit :: Parser Integer
-intLit = expect "integer literal" $ lexeme $ read <$> some digit <* mustFail letter
+intLit = expect "integer literal" $ lexeme $ read <$> (clearExpect $ some digit) <* mustFail letter
 
 identifier :: Parser String
 identifier = expect "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
@@ -112,8 +112,8 @@ lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
 space, spaces :: Parser ()
-space = void (char ' ') <|> comment
-spaces = void $ many space
+space = void (char ' ' <|> char '\t') <|> comment
+spaces = expect "spaces" $ clearExpect $ void $ many space
 
 comment :: Parser ()
 comment = expect "comment" $ lineComment <|> blockComment

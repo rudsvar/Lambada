@@ -6,7 +6,7 @@
 
 module PrimParser (
   Parser (runParser), State (..),
-  expect,
+  expect, clearExpect, getState, setState,
   mustFail, item, lookahead, notFollowedBy,
   empty, (<|>), many, some
 ) where
@@ -32,8 +32,14 @@ data State = State {
 }
 
 instance Show State where
-  show st = intercalate "\n" $ map format $ reverse (expected st)
-    where format (label, inp) = "| Expected " ++ label ++ " from input: " ++ show inp
+  show st = intercalate "\n" $ map combine $ indent 0 $ map format $ reverse (expected st)
+    where combine (label, inp) = label ++ show inp
+          format (label, inp) = ("\\ Expected " ++ label ++ " in input ", inp)
+          indent i ((s1, inp1):(s2, inp2):xs)
+            | length inp1 >= length inp2
+            = (s1, inp1) : indent (i+1) ((concat (replicate (i+1) " ") ++ s2, inp2):xs)
+            | otherwise = (s1, inp1) : indent 0 ((s2, inp2) : xs)
+          indent _ x = x
 
 instance Functor Parser where
   fmap f p = p >>= pure . f
@@ -43,9 +49,12 @@ instance Applicative Parser where
   (<*>) = ap
 
 instance Alternative Parser where
-  empty = P $ \st -> Left st
-  p <|> q = P $ \st -> either (left st) (Right . id) $ runParser p st
-    where left = const . runParser q
+  empty = P Left
+  p <|> q = P $ \st ->
+    case runParser p st of
+      Right x -> Right x
+      Left err -> runParser q $
+        st { expected = expected err }
 
 instance Monad Parser where
   return = pure
@@ -62,18 +71,17 @@ item = P $ \st ->
     (x:xs) -> Right (x, st {input = xs, col = col st + 1})
     [] -> Left st
 
-expect :: String -> Parser a -> Parser a
-expect s p = do
-  st <- getState
-  setState (st { expected = (s, input st) : expected st })
-  p
-
 -- |Succeed if the given parser fails
 mustFail :: Parser a -> Parser ()
 mustFail p = P $ \st ->
   case runParser p st of
     Left _ -> Right ((), st)
-    _ -> Left st
+    Right (_, st') -> Left failSt
+      where
+        failSt
+          | ((s, inp):xs) <- expected st'
+          = st' { expected = (s ++ " to fail", inp) : xs }
+          | otherwise = st'
 
 -- |Parse with the given parser, but do not change the state
 lookahead :: Parser a -> Parser a
@@ -88,3 +96,16 @@ getState = P $ \st -> Right (st, st)
 setState :: State -> Parser ()
 setState st = P $ const $ Right ((), st)
 
+editState :: (State -> State) -> Parser ()
+editState f = f <$> getState >>= setState
+
+-- |Prepend a label describing the expected input
+expect :: String -> Parser a -> Parser a
+expect s p = editState prependLabel >> p
+  where prependLabel st = st { expected = (s, input st) : expected st }
+
+clearExpect :: Parser a -> Parser a
+clearExpect p = P $ \st ->
+  case runParser p st of
+    Right (x, st') -> Right (x, st' { expected = expected st })
+    x -> x

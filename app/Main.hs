@@ -18,9 +18,5 @@ main = do
 
 interpreter :: IO ()
 interpreter = forever $ do
-  putStr "> "
-  hFlush stdout
-  input <- getLine
-  case evalLambada input of
-    Left err -> putStrLn err
-    Right x -> print x
+  putStr "> " >> hFlush stdout
+  evalLambada <$> getLine >>= either putStrLn print

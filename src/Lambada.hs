@@ -34,7 +34,7 @@ eval env (Def s a b) = eval ((s,a):env) b
 eval env (If e a b)
   | Right (BVal True) <- eval env e = eval env a
   | Right (BVal False) <- eval env e = eval env b
-  | Right val <- eval env e = Left $ show e ++ " must evaluate to bool, but got value\n" ++ show val
+  | Right x <- eval env e = Left $ show e ++ " must evaluate to bool, but got value\n" ++ show x
 eval env (Abs s e) = pure $ Closure env s e
 
 -- PrimFuns
@@ -66,7 +66,7 @@ eval _ f@(PrimCmp _)     = Left $ "Error " ++ show f
 
 eval env (App f arg)
   | Right (Closure cloEnv s e) <- eval env f = eval (cloEnv ++ (s, arg) : env) e
-  | Right val <- eval env f = Left $ show f ++ " must evaluate to closure (function)\nbut got value: " ++ show val
+  | Right x <- eval env f = Left $ show f ++ " must evaluate to closure (function)\nbut got value: " ++ show x
 
 eval env (Var v)
   | Just e <- lookup v env = eval env e

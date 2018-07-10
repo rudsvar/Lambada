@@ -55,6 +55,5 @@ printWithDebug (Right (x,st)) = putStrLn $ "Result:\n" ++ show x ++ "\nRemaining
 -- Format the state for printing
 formatState :: FilePath -> State -> String
 formatState f st = "Parse error: " ++ location ++ "\n" ++ show st
-  where
-    location = f ++ ":" ++ show (line st) ++ ":" ++ show (col st)
+  where location = f ++ ":" ++ show (line st) ++ ":" ++ show (col st)
 

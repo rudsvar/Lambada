@@ -7,8 +7,8 @@
 module PrimParser (
   module Control.Applicative, many, some,
   Parser (runParser), State (..),
-  expect, noExpect, clearExpect, getState, setState,
-  mustFail, item, try, lookahead, notFollowedBy
+  expect, (<?>), noExpect, clearExpect, onlyExpect, (<?!>), getState, setState,
+  unexpected, item, try, lookahead, notFollowedBy
 ) where
 
 import Prelude hiding (until)
@@ -67,31 +67,26 @@ item = P $ \st' ->
 try :: Parser a -> Parser a
 try p = P $ \st ->
   case runParser p st of
-    Left err -> Left $ err { consumed = False, input = input st }
-    _ -> runParser p st
+    Left _ -> Left $ st { consumed = False, input = input st }
+    x -> x
 
 some, many :: Parser a -> Parser [a]
 many p = some p <|> pure []
 some p = (:) <$> p <*> many p
 
 -- |Succeed if the given parser fails
-mustFail :: Parser a -> Parser ()
-mustFail p = P $ \st ->
+unexpected :: Parser a -> Parser ()
+unexpected p = P $ \st ->
   case runParser p st of
     Left _ -> Right ((), st)
-    Right (_, st') -> Left failSt
-      where
-        failSt
-          | ((s, inp):xs) <- expected st'
-          = st' { expected = (s ++ " to fail", inp) : xs }
-          | otherwise = st'
+    Right (_, st') -> Left st'
 
 -- |Parse with the given parser, but do not change the state
 lookahead :: Parser a -> Parser a
 lookahead p = getState >>= (p <*) . setState
 
 notFollowedBy :: Parser a -> Parser b -> Parser a
-notFollowedBy p q = p <* mustFail q
+notFollowedBy p q = p <* unexpected q
 
 getState :: Parser State
 getState = P $ \st -> Right (st, st)
@@ -104,11 +99,27 @@ editState f = f <$> getState >>= setState
 
 -- |Prepend a label describing the expected input
 expect :: String -> Parser a -> Parser a
-expect s p = editState prependLabel >> p
-  where prependLabel st = st { expected = (s, input st) : expected st }
+expect s p = P $ \old ->
+  let st = old { expected = (s, input old) : expected old } in
+  case runParser p st of
+    Right (x, st') -> Right (x, st' { expected = expected old })
+    Left err -> Left err
+
+(<?>) :: Parser a -> String -> Parser a
+p <?> s = expect s p
+infixl 0 <?>
 
 noExpect :: Parser a -> Parser a
-noExpect p = p <* clearExpect
+noExpect p = P $ \st ->
+  case runParser p st of
+    Left err -> Left (err { expected = expected st })
+    Right x -> Right x
+
+onlyExpect :: String -> Parser a -> Parser a
+onlyExpect s = expect s . noExpect
+
+(<?!>) :: Parser a -> String -> Parser a
+p <?!> s = onlyExpect s p
 
 clearExpect :: Parser ()
 clearExpect = editState (\st -> st { expected = [] })

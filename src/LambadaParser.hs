@@ -1,10 +1,6 @@
 module LambadaParser (
   module Lang,
-  parseLambada,
-  parseLambadaTest,
-  parseLambadaFile,
-  parseLambadaFileTest,
-  unsafeParse,
+  module LambadaParser,
 ) where
 
 import Parser
@@ -81,9 +77,9 @@ ifExpr = expect "if-expr" $ If <$> parens expr <*> parens expr <*> parens expr
 lambda :: Parser Expr
 lambda = Abs <$> (char '\\' >> identifier) <*> (symbol "." <|> symbol "->" >> expr)
 
-int, str, bool, var, keyword :: Parser Expr
+int, str, bool, var, lambadaKeyword :: Parser Expr
 int = I <$> intLit
 str = S <$> strLit
 bool = B <$> ((symbol "true" >> pure True) <|> (symbol "false" >> pure False))
-var = op <|> Var <$> (mustFail keyword >> identifier)
-keyword = Var <$> oneOf (symbol <$> ["if", "then", "else", "let", "in"])
+var = op <|> Var <$> (unexpected lambadaKeyword >> identifier)
+lambadaKeyword = Var <$> oneOf (symbol <$> ["if", "then", "else", "let", "in"])

@@ -27,22 +27,30 @@ digit    = expect "digit" $ sat isDigit
 alphaNum = expect "alphaNum" $ sat isAlphaNum
 
 char :: Char -> Parser Char
-char c = expect ("char " ++ show c) $ sat (==c)
+char c = sat (==c) <?!> ("char " ++ show c)
 
-notChar :: Char -> Parser ()
-notChar c = void $ mustFail (char c)
+notChar :: Char -> Parser Char
+notChar c = sat (/=c) <?> "not char " ++ show c
 
 -- String and integer parsers
 
 string, symbol :: String -> Parser String
 string str = foldr (\x acc -> (:) <$> char x <*> acc) (pure []) str
-symbol s = expect ("symbol " ++ show s) $ noExpect $ lexeme $ string s
+symbol s = expect ("symbol " ++ show s) $ lexeme $ string s
+
+notString, notSymbol :: String -> Parser ()
+notString str = unexpected (string str)
+notSymbol str = onlyExpect ("not symbol " ++ show str) $ void $ lexeme $ notString str
 
 intLit :: Parser Integer
-intLit = expect "integer literal" $ lexeme $ read <$> (some digit) <* mustFail letter
+intLit = expect "integer literal" $ lexeme $ read <$> (noExpect (some digit) <* noLetter)
+  where noLetter = onlyExpect "no letter after intLit" $ unexpected letter
 
 identifier :: Parser String
 identifier = expect "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
+
+keyword :: String -> Parser String
+keyword s = lexeme $ string s `notFollowedBy` letter
 
 -- Select from options
 
@@ -50,11 +58,11 @@ oneOf :: [Parser a] -> Parser a
 oneOf = foldr (<|>) empty
 
 noneOf :: [Parser a] -> Parser ()
-noneOf xs = foldr ((>>) . mustFail) (pure ()) xs
+noneOf xs = foldr ((>>) . unexpected) (pure ()) xs
 
 oneOfChar, noneOfChar :: [Char] -> Parser Char
-oneOfChar cs = expect ("one of " ++ show cs) $ lexeme $ sat (`elem` cs)
-noneOfChar cs = expect ("none of " ++ show cs) $ lexeme $ sat (not . (`elem` cs))
+oneOfChar cs = sat (`elem` cs) <?!> ("one of " ++ show cs)
+noneOfChar cs = sat (not . (`elem` cs)) <?!> ("none of " ++ show cs)
 
 -- Separators
 
@@ -68,16 +76,16 @@ commaSep :: Parser a -> Parser [a]
 commaSep p = p `sepBy` char ','
 
 list :: Parser a -> Parser [a]
-list e = expect "list" $ brackets $ commaSep e
+list e = expect "list" $ brackets $ onlyExpect "element or separator" $ commaSep e
 
 tuple :: Parser a -> Parser [a]
-tuple e = expect "tuple" $ parens $ commaSep e
+tuple e = onlyExpect "tuple" $ parens $ commaSep e
 
 -- Parse multiple tokens
 
 until :: Parser a -> Parser b -> Parser [a]
 until p q = hit <|> miss
-  where hit = lookahead q >> pure []
+  where hit = q >> pure []
         miss = (:) <$> p <*> p `until` q
 
 skipUntil :: Parser a -> Parser ()
@@ -94,13 +102,13 @@ between :: Parser a -> Parser b -> Parser c -> Parser c
 between begin end p = begin *> p <* end
 
 strLit :: Parser String
-strLit = expect "string literal" $ between (symbol "\"") (symbol "\"") (many (sat (/='"')))
+strLit = expect "string literal" $ lexeme $ between (char '"') (char '"') (many (notChar '"'))
 
 parens, maybeParens, brackets, braces :: Parser a -> Parser a
-parens = expect "parens" . between (char '(') (char ')')
+parens = expect "parens" . between (symbol "(") (symbol ")")
 maybeParens p = parens p <|> p
-brackets = expect "brackets" . between (char '[') (char ']')
-braces = expect "braces" . between (char '{') (char '}')
+brackets = expect "brackets" . between (symbol "[") (symbol "]")
+braces = expect "braces" . between (symbol "{") (symbol "}")
 
 -- Whitespace related
 
@@ -109,18 +117,16 @@ lexeme p = p <* spaces
 
 space, spaces :: Parser ()
 space = void (char ' ' <|> char '\t') <|> comment
-spaces = expect "spaces" $ noExpect $ void $ many space
+spaces = void $ many space
 
 comment :: Parser ()
-comment = expect "comment" $ lineComment <|> blockComment
+comment = expect "comment" $ char '/' >> lineComment <|> blockComment
 
 lineComment, blockComment :: Parser ()
-lineComment = expect "lineComment" $ noExpect $ void $ between (symbol begin) (symbol end) $ some (notChar '\n')
-  where begin = "//"; end = "\n";
-blockComment = expect "blockComment" $ noExpect $ between (symbol begin) (symbol end) $ skipUntil (symbol end)
-  where begin = "/*"; end = "*/";
+lineComment = expect "lineComment" $ void $ char '/' >> onlyExpect "comment end" (skipUntil $ char '\n')
+blockComment = expect "blockComment" $ void $ char '*' >> onlyExpect "comment end" (skipUntil $ string "*/")
 
 newLine, eof :: Parser ()
-eof = expect "eof" $ mustFail (expect "item" item)
+eof = expect "eof" $ unexpected (expect "item" item)
 newLine = expect "newline" $ void $ char '\n'
 

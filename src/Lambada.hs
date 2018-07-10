@@ -34,7 +34,7 @@ eval env (Def s a b) = eval ((s,a):env) b
 eval env (If e a b)
   | Right (BVal True) <- eval env e = eval env a
   | Right (BVal False) <- eval env e = eval env b
-  | Right val <- eval env e = fail $ show e ++ " must evaluate to bool, but got value\n" ++ show val
+  | Right val <- eval env e = Left $ show e ++ " must evaluate to bool, but got value\n" ++ show val
 eval env (Abs s e) = pure $ Closure env s e
 
 -- PrimFuns
@@ -58,20 +58,20 @@ eval env (App (App (PrimCmp f) a) b)
   = pure $ BVal (f x y)
 
 -- PrimFun errors
-eval _ f@(PrimUnInt _)   = fail $ "Error " ++ show f
-eval _ f@(PrimUnBool _)  = fail $ "Error " ++ show f
-eval _ f@(PrimBinInt _)  = fail $ "Error " ++ show f
-eval _ f@(PrimBinBool _) = fail $ "Error " ++ show f
-eval _ f@(PrimCmp _)     = fail $ "Error " ++ show f
+eval _ f@(PrimUnInt _)   = Left $ "Error " ++ show f
+eval _ f@(PrimUnBool _)  = Left $ "Error " ++ show f
+eval _ f@(PrimBinInt _)  = Left $ "Error " ++ show f
+eval _ f@(PrimBinBool _) = Left $ "Error " ++ show f
+eval _ f@(PrimCmp _)     = Left $ "Error " ++ show f
 
 eval env (App f arg)
   | Right (Closure cloEnv s e) <- eval env f = eval (cloEnv ++ (s, arg) : env) e
-  | Right val <- eval env f = fail $ show f ++ " must evaluate to closure (function)\nbut got value: " ++ show val
+  | Right val <- eval env f = Left $ show f ++ " must evaluate to closure (function)\nbut got value: " ++ show val
 
 eval env (Var v)
   | Just e <- lookup v env = eval env e
   | otherwise = Left $ "Variable " ++ show v ++ " not in scope."
 
-eval env e | Right x <- eval env e = fail $ "Tried to eval " ++ show e ++ ", and got wrong type " ++ show x
-eval env e | Left err <- eval env e = fail $ "Tried to eval " ++ show e ++ ", but got error " ++ err
-eval _ e = fail $ "Failed to evaluate " ++ show e
+eval env e | Right x <- eval env e = Left $ "Tried to eval " ++ show e ++ ", and got wrong type " ++ show x
+eval env e | Left err <- eval env e = Left $ "Tried to eval " ++ show e ++ ", but got error " ++ err
+eval _ e = Left $ "Failed to evaluate " ++ show e

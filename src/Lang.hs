@@ -23,15 +23,15 @@ instance Show Expr where
   show (S s) = show s
   show (B b) = show b
   show (Var s) = s
-  show (Def s a b) = "let " ++ s ++ " = " ++ show a ++ " in\n" ++ show b
-  show (If e l r) = "if " ++ show e ++ " then " ++ show l ++ " else " ++ show r
+  show (Def s a b) = "let " ++ s ++ " = " ++ show a ++ " in (" ++ show b ++ ")"
+  show (If e l r) = "if (" ++ show e ++ ") then (" ++ show l ++ ") else (" ++ show r ++ ")"
   show (App f x) = "(" ++ show f ++ " " ++ show x ++ ")"
   show (Abs s e) = "\\" ++ s ++ " -> " ++ show e
-  show (PrimUnInt _) = "<Int -> Int>"
-  show (PrimUnBool _) = "<Bool -> Bool>"
-  show (PrimBinInt _) = "<Int -> Int -> Int>"
-  show (PrimBinBool _) = "<Bool -> Bool -> Bool>"
-  show (PrimCmp _) = "<Int -> Int -> Bool>"
+  show (PrimUnInt _) = "<unInt>"
+  show (PrimUnBool _) = "<unBool>"
+  show (PrimBinInt _) = "<binInt>"
+  show (PrimBinBool _) = "<binBool>"
+  show (PrimCmp _) = "<cmp>"
 
 instance Eq Expr where
   I x == I y = x == y

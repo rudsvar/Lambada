@@ -13,7 +13,6 @@ import PrimParser
 import Prelude hiding (until)
 import Data.Char (isLetter, isDigit, isAlphaNum)
 import Data.Bool (bool)
-import Control.Applicative ((<|>), empty, many, some)
 import Control.Monad (void)
 
 -- Character parsers
@@ -35,15 +34,12 @@ notChar c = void $ mustFail (char c)
 
 -- String and integer parsers
 
-string :: String -> Parser String
-string s = expect ("string " ++ show s) $ lexeme $ string' s
-  where
-    string' [] = empty
-    string' [c] = (:[]) <$> char c
-    string' (c:str) = (:) <$> char c <*> string str
+string, symbol :: String -> Parser String
+string str = foldr (\x acc -> (:) <$> char x <*> acc) (pure []) str
+symbol s = expect ("symbol " ++ show s) $ noExpect $ lexeme $ string s
 
 intLit :: Parser Integer
-intLit = expect "integer literal" $ lexeme $ read <$> (clearExpect $ some digit) <* mustFail letter
+intLit = expect "integer literal" $ lexeme $ read <$> (some digit) <* mustFail letter
 
 identifier :: Parser String
 identifier = expect "identifier" $ lexeme $ (:) <$> letter <*> many alphaNum
@@ -98,7 +94,7 @@ between :: Parser a -> Parser b -> Parser c -> Parser c
 between begin end p = begin *> p <* end
 
 strLit :: Parser String
-strLit = expect "string literal" $ between (string "\"") (string "\"") (many (sat (/='"')))
+strLit = expect "string literal" $ between (symbol "\"") (symbol "\"") (many (sat (/='"')))
 
 parens, maybeParens, brackets, braces :: Parser a -> Parser a
 parens = expect "parens" . between (char '(') (char ')')
@@ -113,18 +109,18 @@ lexeme p = p <* spaces
 
 space, spaces :: Parser ()
 space = void (char ' ' <|> char '\t') <|> comment
-spaces = expect "spaces" $ clearExpect $ void $ many space
+spaces = expect "spaces" $ noExpect $ void $ many space
 
 comment :: Parser ()
 comment = expect "comment" $ lineComment <|> blockComment
 
 lineComment, blockComment :: Parser ()
-lineComment = expect "lineComment" $ void $ between (string begin) (string end) $ some (notChar '\n')
+lineComment = expect "lineComment" $ noExpect $ void $ between (symbol begin) (symbol end) $ some (notChar '\n')
   where begin = "//"; end = "\n";
-blockComment = expect "blockComment" $ between (string begin) (string end) $ skipUntil (string end)
+blockComment = expect "blockComment" $ noExpect $ between (symbol begin) (symbol end) $ skipUntil (symbol end)
   where begin = "/*"; end = "*/";
 
 newLine, eof :: Parser ()
-eof = expect "end of file" $ mustFail (expect "a" item)
+eof = expect "eof" $ mustFail (expect "item" item)
 newLine = expect "newline" $ void $ char '\n'
 

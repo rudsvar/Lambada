@@ -5,16 +5,15 @@
 -}
 
 module PrimParser (
+  module Control.Applicative, many, some,
   Parser (runParser), State (..),
-  expect, clearExpect, modLast, getState, setState,
-  mustFail, item, lookahead, notFollowedBy,
-  empty, (<|>), many, some
+  expect, noExpect, clearExpect, getState, setState,
+  mustFail, item, try, lookahead, notFollowedBy
 ) where
 
 import Prelude hiding (until)
 import Data.List
-import Control.Applicative (Alternative, empty, (<|>), many, some)
-import Control.Monad (ap)
+import Control.Applicative (Alternative, empty, (<|>))
 
 newtype Parser a = P {
   runParser :: State -> Either State (a, State)
@@ -28,47 +27,52 @@ data State = State {
   input :: Input,
   line :: Int,
   col :: Int,
-  expected :: [Expectation]
+  expected :: [Expectation],
+  consumed :: Bool
 }
 
 instance Show State where
-  show st = intercalate "\n" $ map combine $ indent [0] $ map format $ reverse (expected st)
+  show st = intercalate "\n" $ map (combine . format) $ reverse (expected st)
     where combine (label, inp) = label ++ show inp
           format (label, inp) = ("> Expected " ++ label ++ " in input ", inp)
-          indent (i:is) ((s1, inp1):(s2, inp2):xs)
-            | length inp1 < length inp2 = (s1, inp1) : indent is ((s2, inp2) : xs)
-            | otherwise = (s1, inp1) : indent (i+1:is) ((concat (replicate (i+1) "  ") ++ s2, inp2):xs)
-          indent _ x = x
 
 instance Functor Parser where
   fmap f p = p >>= pure . f
 
 instance Applicative Parser where
-  pure x = P $ \st -> Right (x, st)
-  (<*>) = ap
+  p <*> q = fmap <$> p >>= ($ q)
+  pure x = P $ Right . (,) x
 
 instance Alternative Parser where
   empty = P Left
-  p <|> q = P $ \st ->
+  p <|> q = P $ \old ->
+    let st = old { consumed = False } in
     case runParser p st of
-      Right x -> Right x
-      Left err -> runParser q $
-        st { expected = expected err }
+      Left err | not (consumed err) -> runParser q st
+      x -> x
 
 instance Monad Parser where
-  return = pure
-  p >>= f = P $ \st ->
-    case runParser p st of
-      Right (x, st') -> runParser (f x) st'
-      Left err -> Left err
+  p >>= f = P $ either Left right . runParser p
+    where right (x, st') = runParser (f x) st'
 
 -- |Take a single character from the input
 item :: Parser Char
-item = P $ \st ->
+item = P $ \st' ->
+  let st = st' { consumed = True } in
   case input st of
     ('\n':xs) -> Right ('\n', st {input = xs, line = line st + 1, col = 1})
     (x:xs) -> Right (x, st {input = xs, col = col st + 1})
-    [] -> Left st
+    [] -> Left $ st { consumed = False }
+
+try :: Parser a -> Parser a
+try p = P $ \st ->
+  case runParser p st of
+    Left err -> Left $ err { consumed = False, input = input st }
+    _ -> runParser p st
+
+some, many :: Parser a -> Parser [a]
+many p = some p <|> pure []
+some p = (:) <$> p <*> many p
 
 -- |Succeed if the given parser fails
 mustFail :: Parser a -> Parser ()
@@ -103,16 +107,8 @@ expect :: String -> Parser a -> Parser a
 expect s p = editState prependLabel >> p
   where prependLabel st = st { expected = (s, input st) : expected st }
 
--- TODO Rewrite?
-modLast :: (String -> String) -> Parser a -> Parser a
-modLast f p = editState test >> p
-  where
-    test st
-      | ((a, b):xs) <- expected st = st { expected = (f a, b) : xs }
-      | otherwise = st
+noExpect :: Parser a -> Parser a
+noExpect p = p <* clearExpect
 
-clearExpect :: Parser a -> Parser a
-clearExpect p = P $ \st ->
-  case runParser p st of
-    Right (x, st') -> Right (x, st' { expected = expected st })
-    x -> x
+clearExpect :: Parser ()
+clearExpect = editState (\st -> st { expected = [] })

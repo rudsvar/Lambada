@@ -3,7 +3,8 @@ module Parser (
   parse,
   parseFile,
   parseTest,
-  parseFileTest
+  parseFileTest,
+  parseDefault
 ) where
 
 import GenericParser
@@ -11,7 +12,14 @@ import GenericParser
 -- Parse a string, return the entire result
 parseDefault :: Parser a -> String -> Either State (a, State)
 parseDefault p s = runParser p defaultState
-  where defaultState = State { input = s, line = 1, col = 1, expected = [] }
+  where defaultState =
+          State {
+            input = s,
+            line = 1,
+            col = 1,
+            expected = [],
+            consumed = False
+          }
 
 -- Parse a given string, discard the state on success
 parse :: Show a => Parser a -> String -> Either String a
@@ -42,7 +50,7 @@ parseFileTest p f = parseFile' p f <$> readFile f >>= printWithDebug
 -- Format the result and print it
 printWithDebug :: Show a => Either String (a, State) -> IO ()
 printWithDebug (Left err) = putStrLn err
-printWithDebug (Right (x,st)) = putStrLn $ "Ok (" ++ show x ++ ", " ++ show (input st) ++ ")"
+printWithDebug (Right (x,st)) = putStrLn $ "Result:\n" ++ show x ++ "\nRemaining ---\n" ++ show (input st)
 
 -- Format the state for printing
 formatState :: FilePath -> State -> String

@@ -14,8 +14,12 @@ lexeme p = p <* spaces
 intLit :: Parser Integer
 intLit = lexeme (read <$> within) <?> "integer literal"
   where within = (some digit <?!> "some digits") <* (unexpected letter <?> "no letter after integer literal")
+
+strLit :: Parser String
 strLit = lexeme (between (char '"') (char '"') within) <?> "string literal"
   where within = some (sat (/='"')) <?!> "end of string literal"
+
+identifier :: Parser String
 identifier = lexeme (some letter) <?!> "identifier"
 
 symbol :: String -> Parser String

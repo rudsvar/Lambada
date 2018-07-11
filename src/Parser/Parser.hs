@@ -5,16 +5,21 @@ module Parser.Parser (
 
 import Parser.Prim
 
+parseFile :: Show a => Parser a -> FilePath -> IO ()
+parseFile p f = (runParser p . defaultState f) <$> readFile f >>= print
+
 lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
 intLit :: Parser Integer
-intLit = lexeme (read <$> (some digit `notFollowedBy` letter)) <?> "integer literal"
-strLit = lexeme (between (char '"') (char '"') (some $ sat (/='"'))) <?> "string literal"
-identifier = lexeme (some letter) <?> "identifier"
+intLit = lexeme (read <$> within) <?> "integer literal"
+  where within = (some digit <?!> "some digits") <* (unexpected letter <?> "no letter after integer literal")
+strLit = lexeme (between (char '"') (char '"') within) <?> "string literal"
+  where within = some (sat (/='"')) <?!> "end of string literal"
+identifier = lexeme (some letter) <?!> "identifier"
 
 symbol :: String -> Parser String
-symbol s = lexeme (string s)
+symbol s = lexeme (string s) <?!> "symbol " ++ show s
 
 between :: Parser a -> Parser b -> Parser c -> Parser c
 between begin end p = begin *> p <* end

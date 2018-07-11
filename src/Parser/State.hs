@@ -16,7 +16,7 @@ data State i = State {
 
 instance Show i => Show (State i) where
   show st = show (loc st) ++ "\n" ++
-    (if show (inp st) == "\"\"" then "No input " else show (inp st)) ++ "remaining\n" ++
+    (if show (inp st) == "\"\"" then "No input" else show (inp st)) ++ " remaining\n" ++
     "with " ++ (if consumed st then "some" else "no") ++ " input consumed\n" ++
     "with " ++
       if null (errors st)
@@ -39,11 +39,11 @@ newtype ParseError i = ParseError (Label, i, Loc)
 instance Show i => Show (ParseError i) where
   show (ParseError (want, got, at)) = "> Expected " ++ want ++ ", got " ++ show got ++ " at " ++ show at
 
-defaultState :: i -> State i
-defaultState i =
+defaultState :: i -> FilePath -> State i
+defaultState i f =
   State {
     inp = i,
-    loc = Loc { file = "<interactive>", line = 1, col = 1 },
+    loc = Loc { file = f, line = 1, col = 1 },
     consumed = False,
     errors = []
   }

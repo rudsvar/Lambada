@@ -1,37 +1,57 @@
+{- |
+    An example of how to use the parser library.
+    Here you can see the construction of an AST,
+    and the pretty printing of it.
+-}
+
 module Parser.Example where
 
 import Parser.Parser
 
 import Data.List
 
+-- | A JSON-like data structure
 data Obj
   = I Integer
   | S String
   | List [Obj]
   | Map [(String, Obj)]
 
-parseJson :: String -> IO ()
+parseJson, parseJsonFile :: String -> IO ()
 parseJson = parse obj
-
-parseJsonFile :: FilePath -> IO ()
 parseJsonFile f = readFile f >>= parseJson
 
+-- | Pretty printing
 instance Show Obj where
   show o = pp 0 4 o
 
+-- | Pretty print an object with the given indentation level
 pp :: Int -> Int -> Obj -> String
-pp _ _(I i)     = show i
-pp _ _ (S s)     = show s
-pp ind dInd (List xs) = formatList ind xs (\x -> replicate (ind+dInd) ' ' ++ pp (ind+dInd) dInd x) "[" "]" 
-pp ind dInd (Map xs) = formatList ind xs (\(x,y) -> replicate (ind+dInd) ' ' ++ x ++ " : " ++ pp (ind+dInd) dInd y) "{" "}"
+pp _ _(I i) = show i
+pp _ _ (S s) = show s
+pp ind dInd (List xs) = formatList ind xs format "[" "]"
+  where format x = indent (ind+dInd) $ pp (ind+dInd) dInd x
+pp ind dInd (Map xs) = formatList ind xs format "{" "}"
+  where format (x,y) = indent (ind+dInd) x ++ " : " ++ pp (ind+dInd) dInd y
 
+-- | Format a list by knowing how much to indent it, what to do with the elements, and how to open/close it
 formatList :: Int -> [a] -> (a -> String) -> String -> String -> String
-formatList ind xs f open close = open ++ "\n" ++ intercalate ",\n" (map f xs) ++ "\n" ++ replicate ind ' ' ++ close
+formatList ind xs f open close = open ++ "\n" ++ intercalate ",\n" (map f xs) ++ "\n" ++ indent ind close
 
+-- | Indent a given string with spaces
+indent :: Int -> String -> String
+indent i s = replicate i ' ' ++ s
+
+-- | A parser for objects
 obj :: Parser Obj
-obj = Map <$> identifier `mapTo` (int <|> str <|> objList <|> obj) <?> "obj"
+obj = Map <$> identifier `mapTo` choice subObj <?> "obj"
 
+-- | A parser for sub-objects
+subObj :: [Parser Obj]
+subObj = [int, str, objList, obj]
+
+-- | The implementations of the sub-object parsers
 int, str, objList :: Parser Obj
 int = I <$> intLit <?> "int"
 str = S <$> strLit <?> "str"
-objList = List <$> (list int <|> list str <|> list objList <|> list obj) <?> "list"
+objList = List <$> (choice $ map list subObj) <?> "list"

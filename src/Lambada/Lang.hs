@@ -1,4 +1,4 @@
-module Lang where
+module Lambada.Lang where
 
 data Expr
   = I Integer

@@ -1,6 +1,6 @@
 module Main where
 
-import Lambada
+import Lambada.Lambada
 
 import System.Environment (getArgs)
 import System.IO (hFlush, stdout)

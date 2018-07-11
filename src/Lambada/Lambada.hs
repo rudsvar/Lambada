@@ -1,6 +1,6 @@
-module Lambada where
+module Lambada.Lambada where
 
-import LambadaParser
+import Lambada.LambadaParser
 
 evalLambada :: String -> Either String Value
 evalLambada s =

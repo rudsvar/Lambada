@@ -4,7 +4,7 @@
     the parser constructor.
 -}
 
-module PrimParser (
+module Parser.PrimParser (
   module Control.Applicative, many, some,
   Parser (runParser), State (..),
   expect, (<?>), noExpect, clearExpect, onlyExpect, (<?!>), getState, setState,

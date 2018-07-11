@@ -1,5 +1,5 @@
-module Parser (
-  module GenericParser,
+module Parser.Parser (
+  module Parser.GenericParser,
   parse,
   parseFile,
   parseTest,
@@ -7,7 +7,7 @@ module Parser (
   parseDefault
 ) where
 
-import GenericParser
+import Parser.GenericParser
 
 -- Parse a string, return the entire result
 parseDefault :: Parser a -> String -> Either State (a, State)

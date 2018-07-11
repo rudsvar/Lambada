@@ -2,13 +2,13 @@
     A module for higher level parsers
 -}
 
-module GenericParser (
-  module GenericParser,
-  module PrimParser,
+module Parser.GenericParser (
+  module Parser.GenericParser,
+  module Parser.PrimParser,
   Control.Monad.void
 ) where
 
-import PrimParser
+import Parser.PrimParser
 
 import Prelude hiding (until)
 import Data.Char (isLetter, isDigit, isAlphaNum)

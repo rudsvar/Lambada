@@ -1,10 +1,10 @@
-module LambadaParser (
-  module Lang,
-  module LambadaParser,
+module Lambada.LambadaParser (
+  module Lambada.Lang,
+  module Lambada.LambadaParser,
 ) where
 
-import Parser
-import Lang
+import Parser.Parser
+import Lambada.Lang
 
 import Prelude hiding (lines)
 import Data.Char

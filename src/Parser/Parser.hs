@@ -36,3 +36,6 @@ tuple p = parens $ commaSep p
 
 mapTo :: Parser a -> Parser b -> Parser [(a, b)]
 mapTo p q = braces $ commaSep ((,) <$> p <*> (symbol ":" *> q) <?> "test")
+
+data Test = List [Integer] | Map [(String, Test)] deriving Show
+test = ((List <$> list integer <?> "list of int") <|> (Map <$> some letter `mapTo` test <?> "map from letter to test")) <?> "test"

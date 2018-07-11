@@ -37,7 +37,7 @@ instance Alternative (ParseT i) where
   p <|> q = P $ \old ->
     let st = old { consumed = False } in
     case runParser p st of
-      Err e | not (consumed e) -> runParser q st
+      Err e | not (consumed e) -> runParser q (e { inp = inp st })
       Err e -> Err e
       Ok (x, st') -> Ok (x, st' { errors = errors st })
 

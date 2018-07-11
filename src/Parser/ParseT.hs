@@ -12,7 +12,7 @@ import Control.Monad (void)
 data Result i a = Err (State i) | Ok (a, State i)
 
 instance (Show i, Show a) => Show (Result i a) where
-  show (Ok (x, st)) = "Result " ++ show x ++ "\n" ++ show st
+  show (Ok (x, st)) = show x ++ "\n" ++ show st
   show (Err e) = show e
 
 newtype ParseT i a = P {

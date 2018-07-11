@@ -1,16 +1,17 @@
-module Parser.Parser where
+module Parser.Parser (
+  module Parser.Parser,
+  module Parser.Prim
+) where
 
 import Parser.Prim
-
-space, spaces :: Parser ()
-space = void $ char ' '
-spaces = void $ many space
 
 lexeme :: Parser a -> Parser a
 lexeme p = p <* spaces
 
-integer :: Parser Integer
-integer = lexeme (read <$> (some digit `notFollowedBy` letter)) <?> "integer"
+intLit :: Parser Integer
+intLit = lexeme (read <$> (some digit `notFollowedBy` letter)) <?> "integer literal"
+strLit = lexeme (between (char '"') (char '"') (some $ sat (/='"'))) <?> "string literal"
+identifier = lexeme (some letter) <?> "identifier"
 
 symbol :: String -> Parser String
 symbol s = lexeme (string s)
@@ -27,16 +28,10 @@ sepBy :: Parser a -> Parser b -> Parser [a]
 p `sepBy` q = atLeastOne p <|> pure []
   where atLeastOne p' = (:) <$> p' <*> (q *> atLeastOne p' <|> pure [])
 
-commaSep :: Parser a -> Parser [a]
+commaSep, list, tuple :: Parser a -> Parser [a]
 commaSep p = p `sepBy` symbol ","
-
-list, tuple :: Parser a -> Parser [a]
 list p = brackets $ commaSep p
 tuple p = parens $ commaSep p
 
 mapTo :: Parser a -> Parser b -> Parser [(a, b)]
 mapTo p q = braces $ commaSep $ (,) <$> p <*> (symbol ":" *> q)
-
-data Obj = List [Integer] | Map [(String, Obj)] deriving Show
-obj = Map <$> some letter `mapTo` (intList <|> obj) <?> "letter:intList or letter:obj)"
-  where intList = List <$> list integer <?> "intList"

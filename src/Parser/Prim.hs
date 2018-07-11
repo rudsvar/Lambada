@@ -6,7 +6,7 @@ module Parser.Prim (
 import Parser.ParseT
 
 import Data.Bool (bool)
-import Data.Char (isLetter, isDigit, isAlphaNum)
+import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
 
 type Parser a = ParseT String a
 
@@ -61,6 +61,10 @@ letter, digit, alphaNum :: Parser Char
 letter = sat isLetter <?> "letter"
 digit = sat isDigit <?> "digit"
 alphaNum = sat isAlphaNum <?> "alphaNum"
+
+space, spaces :: Parser ()
+space = void $ sat isSpace
+spaces = void $ many space
 
 char :: Char -> Parser Char
 char c = sat (==c) <?> "char " ++ show c

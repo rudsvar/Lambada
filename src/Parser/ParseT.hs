@@ -9,6 +9,12 @@ import Control.Applicative (Alternative, (<|>), empty, many, some)
 
 data Result i a = Err (State i) | Ok (a, State i)
 
+ifOkElse :: ((a, State i) -> (a, State i)) -> (State i -> State i) -> ParseT i a -> ParseT i a
+ifOkElse ok err p = P $ \st ->
+  case runParser p st of
+    Err e -> Err $ err e
+    Ok x -> Ok $ ok x
+
 instance (Show i, Show a) => Show (Result i a) where
   show (Ok (x, st)) = "Result " ++ show x ++ "\n" ++ show st
   show (Err e) = show e
@@ -35,7 +41,8 @@ instance Alternative (ParseT i) where
   p <|> q = P $ \st ->
     case runParser p st of
       Err e | not (consumed e) -> runParser q st
-      x -> x
+      Err e -> Err e
+      Ok (x, st') -> Ok (x, st' { errors = errors st })
 
 modifyState :: (State i -> State i) -> ParseT i ()
 modifyState f = P $ \st -> Ok ((), f st)

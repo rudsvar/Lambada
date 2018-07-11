@@ -2,7 +2,7 @@ module Parser.State (
   State (..),
   ParseError (..),
   incLine, incCol, resetCol,
-  labelState, defaultState
+  labelState, clearLabel, defaultState
 ) where
 
 import Data.List (intercalate)
@@ -16,14 +16,13 @@ data State i = State {
 
 instance Show i => Show (State i) where
   show st =
-    "Input " ++ show (inp st) ++ "\n" ++
-    "remaining at " ++ show (loc st) ++ "\n" ++
-    if consumed st then "" else "with no " ++ "input consumed\n" ++
+    "Input " ++ show (inp st) ++ " remaining at " ++ show (loc st) ++ "\n" ++
+    "with " ++ (if consumed st then "some" else "no") ++ " input consumed\n" ++
     "with " ++
       if null (errors st)
         then "no errors"
-        else "with errors\n" ++
-          intercalate "\n>" (map show $ reverse $ errors st)
+        else "errors\n" ++
+          intercalate "\n" (map show $ reverse $ errors st)
 
 data Loc = Loc {
   line :: Int,
@@ -37,7 +36,7 @@ type Label = String
 newtype ParseError i = ParseError (Label, i, Loc)
 
 instance Show i => Show (ParseError i) where
-  show (ParseError (want, got, at)) = "Expected " ++ show want ++ ", but got " ++ show got ++ " at " ++ show at
+  show (ParseError (want, got, at)) = "> Expected " ++ want ++ ", got " ++ show got ++ " at " ++ show at
 
 defaultState :: i -> State i
 defaultState i =
@@ -59,3 +58,6 @@ resetCol st = setCol 0 st
 
 labelState :: Label -> State i -> State i
 labelState l st = st { errors = ParseError (l, inp st, loc st) : errors st }
+
+clearLabel :: State i -> State i
+clearLabel st = st { errors = [] }

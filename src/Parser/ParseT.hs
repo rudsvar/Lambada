@@ -9,30 +9,30 @@ import Parser.State
 import Control.Applicative (Alternative, (<|>), empty, many, some)
 import Control.Monad (void)
 
-data Result i a = Err (State i) | Ok (a, State i)
+data Result a = Err (State) | Ok (a, State)
 
-instance (Show i, Show a) => Show (Result i a) where
-  show (Ok (x, st)) = show x ++ "\n" ++ show st
+instance (Show a) => Show (Result a) where
+  show (Ok (x, st)) = show x ++ "\nOk, remainder " ++ show (inp st)
   show (Err e) = show e
 
-newtype ParseT i a = P {
-  runParser :: State i -> Result i a
+newtype ParseT a = P {
+  runParser :: State -> Result a
 }
 
-instance Functor (ParseT i) where
+instance Functor ParseT where
   fmap f p = p >>= pure . f
 
-instance Applicative (ParseT i) where
+instance Applicative ParseT where
   pure x = P $ \st -> Ok (x, st)
   p <*> q = p >>= (<$> q)
 
-instance Monad (ParseT i) where
+instance Monad ParseT where
   p >>= q = P $ \st ->
     case runParser p st of
       Err err -> Err err
       Ok (x, st') -> runParser (q x) st'
 
-instance Alternative (ParseT i) where
+instance Alternative ParseT where
   empty = P Err
   p <|> q = P $ \old ->
     let st = old { consumed = False } in
@@ -41,11 +41,11 @@ instance Alternative (ParseT i) where
       Err e -> Err e
       Ok (x, st') -> Ok (x, st' { errors = errors st })
 
-modifyState :: (State i -> State i) -> ParseT i ()
+modifyState :: (State -> State) -> ParseT ()
 modifyState f = P $ \st -> Ok ((), f st)
 
-getState :: ParseT i (State i)
+getState :: ParseT State
 getState = P $ \st -> Ok (st, st)
 
-setState :: (State i) -> ParseT i ()
+setState :: State -> ParseT ()
 setState st = modifyState (const st)

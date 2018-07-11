@@ -7,14 +7,14 @@ module Parser.State (
 
 import Data.List (intercalate)
 
-data State i = State {
-  inp :: i,
+data State = State {
+  inp :: String,
   loc :: Loc,
   consumed :: Bool,
-  errors :: [ParseError i]
+  errors :: [ParseError]
 }
 
-instance Show i => Show (State i) where
+instance Show State where
   show st = show (loc st) ++ "\n" ++
     (if show (inp st) == "\"\"" then "No input" else show (inp st)) ++ " remaining\n" ++
     "with " ++ (if consumed st then "some" else "no") ++ " input consumed\n" ++
@@ -34,12 +34,12 @@ instance Show Loc where
   show l = file l ++ ":" ++ show (line l) ++ ":" ++ show (col l)
 
 type Label = String
-newtype ParseError i = ParseError (Label, i, Loc)
+newtype ParseError = ParseError (Label, String, Loc)
 
-instance Show i => Show (ParseError i) where
+instance Show ParseError where
   show (ParseError (want, got, at)) = "> Expected " ++ want ++ ", got " ++ show got ++ " at " ++ show at
 
-defaultState :: i -> FilePath -> State i
+defaultState :: String -> FilePath -> State
 defaultState i f =
   State {
     inp = i,
@@ -48,17 +48,17 @@ defaultState i f =
     errors = []
   }
 
-setLine, setCol :: Int -> State i -> State i
+setLine, setCol :: Int -> State -> State
 setLine i st = st { loc = (loc st) { line = i } }
 setCol i st = st { loc = (loc st) { col = i } }
 
-incLine, incCol, resetCol :: State i -> State i
+incLine, incCol, resetCol :: State -> State
 incLine st = setLine (line (loc st) + 1) st
 incCol st = setCol (col (loc st) + 1) st
 resetCol st = setCol 0 st
 
-labelState :: Label -> State i -> State i
+labelState :: Label -> State -> State
 labelState l st = st { errors = ParseError (l, inp st, loc st) : errors st }
 
-clearLabel :: State i -> State i
+clearLabel :: State -> State
 clearLabel st = st { errors = [] }

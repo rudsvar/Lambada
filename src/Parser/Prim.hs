@@ -8,7 +8,7 @@ import Parser.ParseT
 import Data.Bool (bool)
 import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
 
-type Parser a = ParseT String a
+type Parser a = ParseT a
 
 -- |Parse a given string, and print the results.
 parse :: Show a => Parser a -> String -> IO ()

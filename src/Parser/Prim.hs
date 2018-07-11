@@ -3,11 +3,12 @@ module Parser.Prim where
 import Parser.ParseT
 
 import Data.Bool (bool)
+import Data.Char (isLetter, isDigit, isAlphaNum)
 
 type Parser a = ParseT String a
 
 parse :: Show a => Parser a -> String -> IO ()
-parse p = print . runParser p . defaultState
+parse p s = print $ runParser p (defaultState s)
 
 label :: String -> Parser a -> Parser a
 label s p = P $ \st ->
@@ -26,7 +27,10 @@ try :: Parser a -> Parser a
 try p = P $ \st ->
   case runParser p st of
     Ok (x, st') -> Ok (x, st')
-    Err e -> Err $ e { consumed = False }
+    Err e -> Err $ e { inp = inp st, consumed = False }
+
+choice :: [Parser a] -> Parser a
+choice = foldr (<|>) empty
 
 item :: Parser Char
 item = P $ \st ->
@@ -35,8 +39,25 @@ item = P $ \st ->
     (x:xs) -> Ok (x, incCol $ st { inp = xs, consumed = True })
     [] -> Err st
 
+eof :: Parser ()
+eof = unexpected item <?> "eof"
+
+notFollowedBy :: Parser a -> Parser b -> Parser a
+p `notFollowedBy` q = p <* unexpected q
+
+unexpected :: Parser a -> Parser ()
+unexpected p = P $ \st ->
+  case runParser p st of
+    Err e -> Ok ((), st)
+    Ok (_, st') -> Err st'
+
 sat :: (Char -> Bool) -> Parser Char
 sat p = lookAhead item >>= bool empty item . p
+
+letter, digit, alphaNum :: Parser Char
+letter = sat isLetter <?> "letter"
+digit = sat isDigit <?> "digit"
+alphaNum = sat isAlphaNum <?> "alphaNum"
 
 char :: Char -> Parser Char
 char c = sat (==c) <?> "char " ++ show c

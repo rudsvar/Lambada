@@ -1,19 +1,13 @@
 module Parser.ParseT (
   module Parser.ParseT,
   module Parser.State,
-  module Control.Applicative,
+  module Control.Applicative
 ) where
 
 import Parser.State
 import Control.Applicative (Alternative, (<|>), empty, many, some)
 
 data Result i a = Err (State i) | Ok (a, State i)
-
-ifOkElse :: ((a, State i) -> (a, State i)) -> (State i -> State i) -> ParseT i a -> ParseT i a
-ifOkElse ok err p = P $ \st ->
-  case runParser p st of
-    Err e -> Err $ err e
-    Ok x -> Ok $ ok x
 
 instance (Show i, Show a) => Show (Result i a) where
   show (Ok (x, st)) = "Result " ++ show x ++ "\n" ++ show st
@@ -38,7 +32,8 @@ instance Monad (ParseT i) where
 
 instance Alternative (ParseT i) where
   empty = P Err
-  p <|> q = P $ \st ->
+  p <|> q = P $ \old ->
+    let st = old { consumed = False } in
     case runParser p st of
       Err e | not (consumed e) -> runParser q st
       Err e -> Err e

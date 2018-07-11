@@ -15,8 +15,8 @@ data State i = State {
 }
 
 instance Show i => Show (State i) where
-  show st =
-    "Input " ++ show (inp st) ++ " remaining at " ++ show (loc st) ++ "\n" ++
+  show st = show (loc st) ++ "\n" ++
+    (if show (inp st) == "\"\"" then "No input " else show (inp st)) ++ "remaining\n" ++
     "with " ++ (if consumed st then "some" else "no") ++ " input consumed\n" ++
     "with " ++
       if null (errors st)
@@ -25,12 +25,13 @@ instance Show i => Show (State i) where
           intercalate "\n" (map show $ reverse $ errors st)
 
 data Loc = Loc {
+  file :: String,
   line :: Int,
   col :: Int
 } deriving Eq
 
 instance Show Loc where
-  show l = show (line l) ++ ":" ++ show (col l)
+  show l = file l ++ ":" ++ show (line l) ++ ":" ++ show (col l)
 
 type Label = String
 newtype ParseError i = ParseError (Label, i, Loc)
@@ -42,7 +43,7 @@ defaultState :: i -> State i
 defaultState i =
   State {
     inp = i,
-    loc = Loc { line = 1, col = 1 },
+    loc = Loc { file = "<interactive>", line = 1, col = 1 },
     consumed = False,
     errors = []
   }

@@ -1,4 +1,7 @@
-module Parser.Prim where
+module Parser.Prim (
+  module Parser.Prim,
+  module Parser.ParseT
+) where
 
 import Parser.ParseT
 
@@ -48,7 +51,7 @@ p `notFollowedBy` q = p <* unexpected q
 unexpected :: Parser a -> Parser ()
 unexpected p = P $ \st ->
   case runParser p st of
-    Err e -> Ok ((), st)
+    Err _ -> Ok ((), st)
     Ok (_, st') -> Err st'
 
 sat :: (Char -> Bool) -> Parser Char

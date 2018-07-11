@@ -1,11 +1,13 @@
 module Parser.ParseT (
   module Parser.ParseT,
   module Parser.State,
-  module Control.Applicative
+  module Control.Applicative,
+  module Control.Monad
 ) where
 
 import Parser.State
 import Control.Applicative (Alternative, (<|>), empty, many, some)
+import Control.Monad (void)
 
 data Result i a = Err (State i) | Ok (a, State i)
 

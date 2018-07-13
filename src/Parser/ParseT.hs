@@ -5,30 +5,16 @@
 module Parser.ParseT (
   module Parser.ParseT,
   module Parser.State,
+  module Parser.Result,
   module Control.Applicative,
   module Control.Monad
 ) where
 
 import Parser.State
+import Parser.Result
 
 import Control.Applicative (Alternative, (<|>), empty, many, some)
 import Control.Monad (void)
-
--- | The result data type, inspired by `either`,
--- but made into its own type to redefine the show instance.
-data Result b a = Err (State b) | Ok (a, State b)
-
--- | Check that the result is as expected.
-err, ok :: Result b a -> Bool
-err (Err _) = True
-err _ = False
-ok (Ok _) = True
-ok _ = False
-
--- | The `Show` instance of the `Result`.
-instance (Show b, Show a) => Show (Result b a) where
-  show (Ok (x, st)) = show st ++ show x
-  show (Err e) = show e ++ "Failure"
 
 -- | The parser type, which is imply a function
 -- from one state to either a state, or a state

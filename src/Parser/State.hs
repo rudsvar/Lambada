@@ -5,7 +5,7 @@
 -}
 
 module Parser.State (
-  State (..),
+  State (..), ParseError, Loc, Label,
   labelState, defaultState,
   incCol, incLine, resetCol,
 ) where
@@ -45,7 +45,12 @@ data Loc = Loc {
 instance Show Loc where
   show l = file l ++ ":" ++ show (line l) ++ ":" ++ show (col l)
 
+-- | A label used to explain what was expected when the the `ParseError` occured.
 type Label = String
+
+-- | A data type used to represent an error while parsing.
+-- This is used to generate a trace of what a parser expected, what
+-- the parser got, and where the error occured.
 newtype ParseError a = ParseError (Label, a, Loc)
 
 instance Show a => Show (ParseError a) where

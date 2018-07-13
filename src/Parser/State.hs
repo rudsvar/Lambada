@@ -70,7 +70,7 @@ setLine, setCol :: Int -> State a -> State a
 setLine i st = st { loc = (loc st) { line = i } }
 setCol i st = st { loc = (loc st) { col = i } }
 
--- | Function that edit the location of the `State`
+-- | Function that edits the location of the `State`
 incLine, incCol, resetCol :: State a -> State a
 incLine st = setLine (line (loc st) + 1) st
 incCol st = setCol (col (loc st) + 1) st

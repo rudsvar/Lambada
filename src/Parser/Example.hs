@@ -6,7 +6,7 @@
 
 module Parser.Example where
 
-import Parser.Parser
+import Parser.String
 
 import Data.List
 
@@ -18,7 +18,7 @@ data Obj
   | Map [(String, Obj)]
 
 parseJson, parseJsonFile :: String -> IO ()
-parseJson = parse obj
+parseJson = parseTest obj
 parseJsonFile f = readFile f >>= parseJson
 
 -- | Pretty printing
@@ -55,3 +55,7 @@ int, str, objList :: Parser Obj
 int = I <$> intLit <?> "int"
 str = S <$> strLit <?> "str"
 objList = List <$> (choice $ map list subObj) <?> "list"
+
+-- |Test
+comment :: Parser ()
+comment = void $ string "/*" >> manyTill item (try $ string "*/")

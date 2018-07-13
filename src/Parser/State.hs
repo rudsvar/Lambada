@@ -1,29 +1,41 @@
+{-|
+  A module containing the `Parser.State` data type,
+  which is used in Parser.ParseT to represent the changing
+  state while parsing.
+-}
+
 module Parser.State (
   State (..),
-  ParseError (..),
-  incLine, incCol, resetCol,
-  labelState, clearLabel, defaultState
+  labelState, defaultState,
+  incCol, incLine, resetCol,
 ) where
 
-import Data.List (intercalate)
-
-data State = State {
-  inp :: String,
+-- | The state data type
+-- It keeps track of the remaining input,
+-- the location, whether or not input has
+-- been consumed, and the error stack.
+data State a = State {
+  inp :: a,
   loc :: Loc,
   consumed :: Bool,
-  errors :: [ParseError]
+  errors :: [ParseError a]
 }
 
-instance Show State where
-  show st = show (loc st) ++ "\n" ++
-    (if show (inp st) == "\"\"" then "No input" else show (inp st)) ++ " remaining\n" ++
-    "with " ++ (if consumed st then "some" else "no") ++ " input consumed\n" ++
-    "with " ++
-      if null (errors st)
-        then "no errors"
-        else "errors\n" ++
-          intercalate "\n" (map show $ reverse $ errors st)
+instance Show a => Show (State a) where
+  show st = location ++ errs ++ remaining
+    where
+      location = show (loc st) ++ "\n"
+      errs
+        | null (errors st) = ""
+        | otherwise = concatMap show . reverse $ errors st
+      remaining
+        | input == "\"\"" = ""
+        | otherwise = input ++ "\n"
+        where input = show $ inp st
 
+-- | The location data type.
+-- This is used to keep track of the location
+-- in the `State` data type.
 data Loc = Loc {
   file :: String,
   line :: Int,
@@ -34,13 +46,14 @@ instance Show Loc where
   show l = file l ++ ":" ++ show (line l) ++ ":" ++ show (col l)
 
 type Label = String
-newtype ParseError = ParseError (Label, String, Loc)
+newtype ParseError a = ParseError (Label, a, Loc)
 
-instance Show ParseError where
-  show (ParseError (want, got, at)) = "> Expected " ++ want ++ ", got " ++ show got ++ " at " ++ show at
+instance Show a => Show (ParseError a) where
+  show (ParseError (want, got, at)) = "> Expected " ++ want ++ ", got " ++ show got ++ " at " ++ show at ++ "\n"
 
-defaultState :: String -> FilePath -> State
-defaultState i f =
+-- | Generates a state with the given filepath and input.
+defaultState :: FilePath -> a -> State a
+defaultState f i =
   State {
     inp = i,
     loc = Loc { file = f, line = 1, col = 1 },
@@ -48,17 +61,16 @@ defaultState i f =
     errors = []
   }
 
-setLine, setCol :: Int -> State -> State
+setLine, setCol :: Int -> State a -> State a
 setLine i st = st { loc = (loc st) { line = i } }
 setCol i st = st { loc = (loc st) { col = i } }
 
-incLine, incCol, resetCol :: State -> State
+-- | Function that edit the location of the `State`
+incLine, incCol, resetCol :: State a -> State a
 incLine st = setLine (line (loc st) + 1) st
 incCol st = setCol (col (loc st) + 1) st
 resetCol st = setCol 0 st
 
-labelState :: Label -> State -> State
+-- | Add an error to the `State` stack with the given label.
+labelState :: Label -> State a -> State a
 labelState l st = st { errors = ParseError (l, inp st, loc st) : errors st }
-
-clearLabel :: State -> State
-clearLabel st = st { errors = [] }

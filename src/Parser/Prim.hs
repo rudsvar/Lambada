@@ -1,3 +1,6 @@
+-- | A module defining a few primitive, general parsers.
+-- These can be used for any kind of input.
+
 module Parser.Prim (
   module Parser.Prim,
   module Parser.ParseT
@@ -5,86 +8,68 @@ module Parser.Prim (
 
 import Parser.ParseT
 
-import Data.Bool (bool)
-import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
-
-type Parser a = ParseT a
-
--- |Parse a given string, and print the results.
-parse :: Show a => Parser a -> String -> IO ()
-parse p s = print $ runParser p (defaultState "<interactive>" s)
-
--- |Label a parser for better error messages
-label :: String -> Parser a -> Parser a
+-- | Label a parser for better error messages
+label :: String -> ParseT b a -> ParseT b a
 label s p = P $ \st ->
   case runParser p (labelState s st) of
     Ok (x, st') -> Ok (x, st' { errors = errors st })
     Err e -> Err e
 
--- |The same as `label`, but with the arguments flipped
-(<?>) :: Parser a -> String -> Parser a
+-- | The same as `label`, but with the arguments flipped
+(<?>) :: ParseT b a -> String -> ParseT b a
 (<?>) = flip label
 infixl 0 <?>
 
--- |Like label, but do not keep sub-errors.
-(<?!>) :: Parser a -> String -> Parser a
+-- | Like label, but do not keep sub-errors,
+-- this can be useful to ignore errors that
+-- are distracting and not useful.
+(<?!>) :: ParseT b a -> String -> ParseT b a
 p <?!> s = P $ \st ->
   case runParser (p <?> s) st of
     Err e -> Err $ labelState s (e { errors = errors st })
     x -> x
 infixl 0 <?!>
 
-lookAhead :: Parser a -> Parser a
+-- | Get the result of parsing with the input,
+-- but without changing the state.
+-- No input is consumed.
+lookAhead :: ParseT b a -> ParseT b a
 lookAhead p = getState >>= (p <*) . setState
 
-try :: Parser a -> Parser a
+-- | Parse with the input, but pretend
+-- that no input has been consumed
+-- if it fails. This can be used
+-- when arbitray lookahead is needed.
+try :: ParseT b a -> ParseT b a
 try p = P $ \st ->
   case runParser p st of
     Ok (x, st') -> Ok (x, st')
     Err e -> Err $ e { inp = inp st, consumed = False }
 
-choice :: [Parser a] -> Parser a
+-- | Parse with the given parsers, and return
+-- the result of the first one to succeed.
+-- Implemented with `<|>`.
+choice :: [ParseT b a] -> ParseT b a
 choice = foldr (<|>) empty
 
-item :: Parser Char
-item = label "item" $ P $ \st ->
-  case inp st of
-    ('\n':xs) -> Ok ('\n', resetCol . incLine $ st { inp = xs, consumed = True })
-    (x:xs) -> Ok (x, incCol $ st { inp = xs, consumed = True })
-    [] -> Err st
-
-eof :: Parser ()
-eof = unexpected item <?> "eof"
-
--- |Fail if the given parser succeeds
-unexpected :: Parser a -> Parser ()
+-- | Fail if the given parser succeeds
+unexpected :: ParseT b a -> ParseT b ()
 unexpected p = P $ \st ->
   case runParser p st of
     Err _ -> Ok ((), st)
     Ok (_, st') -> Err st'
 
-type Predicate = Char -> Bool
+-- | Fail if the first input fails, or the second succeeds.
+notFollowedBy :: ParseT i a -> ParseT i b -> ParseT i a
+p `notFollowedBy` q = p <* unexpected q
 
--- |Parse a character satisfying the predicate
-sat :: Predicate -> Parser Char
-sat p = lookAhead item >>= bool empty item . p
+-- | Parse with the first parser until the second succeeds.
+-- The result of the second is thrown away.
+-- You can use `lookAhead` if this is undesireable.
+manyTill :: ParseT i a -> ParseT i b -> ParseT i [a]
+manyTill p q = q *> pure [] <|> (:) <$> p <*> manyTill p q
 
--- |Character parsers satisfying requirements
-letter, digit, alphaNum :: Parser Char
-letter = sat isLetter <?> "letter"
-digit = sat isDigit <?> "digit"
-alphaNum = sat isAlphaNum <?> "alphaNum"
-
--- |Skip whitespace
-space, spaces :: Parser ()
-space = void $ sat isSpace
-spaces = void $ many space
-
--- |Match a character
-char :: Char -> Parser Char
-char c = sat (==c) <?> "char " ++ show c
-
--- |Match a given string
-string :: String -> Parser String
-string s = string' s <?!> "string " ++ show s
-  where string' = foldr (\x acc -> (:) <$> char x <*> acc) (pure [])
+-- | Parse with the first input, then the third, then the second.
+-- Can be used to implement parens and similar parsers.
+between :: ParseT i a -> ParseT i b -> ParseT i c -> ParseT i c
+between begin end p = begin *> p <* end

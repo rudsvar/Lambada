@@ -1,3 +1,6 @@
+-- | A module containing the most basic string parsers.
+-- These mostly parse a single character.
+
 module Parser.Char (
   module Parser.Char,
   module Parser.Prim

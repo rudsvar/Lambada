@@ -20,6 +20,7 @@ description:         Please see the README on GitHub at <https://github.com/ruds
 
 dependencies:
 - base >= 4.7 && < 5
+- QuickCheck
 
 library:
   source-dirs: src
@@ -41,7 +42,6 @@ tests:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
-    - -Wall
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N

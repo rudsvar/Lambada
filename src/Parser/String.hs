@@ -7,22 +7,6 @@ module Parser.String (
 
 import Parser.Char
 
--- | Parse with the parser and return the result.
-parse :: Parser a -> String -> Result String a
-parse p = runParser p . defaultState "<interactive>"
-
--- | Parse a given string, and print the result.
-parseTest :: Show a => Parser a -> String -> IO ()
-parseTest p = print . parse p
-
--- | Parse a file with a given parser.
-parseFile :: Parser a -> FilePath -> IO (Result String a)
-parseFile p f = runParser p . defaultState f <$> readFile f
-
--- | Parse a given file, and print the result.
-parseFileTest :: Show a => Parser a -> FilePath -> IO ()
-parseFileTest p f = parseFile p f >>= print
-
 -- | Match a given string.
 string :: String -> Parser String
 string s = string' s <?!> "string " ++ show s
@@ -51,26 +35,50 @@ identifier = lexeme ((:) <$> first <*> many letter) <?!> "identifier"
 symbol :: String -> Parser String
 symbol s = lexeme (string s) <?!> "symbol " ++ show s
 
--- | Parse with the given parser, but surrounded by symbols.
-parens, brackets, braces :: Parser a -> Parser a
+-- | Parse with the given parser, but with surrounding parentheses.
+parens :: Parser a -> Parser a
 parens = between (symbol "(") (symbol ")")
+
+-- | Parse with the given parser, but with surrounding brackets.
+brackets :: Parser a -> Parser a
 brackets = between (symbol "[") (symbol "]")
+
+-- | Parse with the given parser, but with surrounding braces.
+braces :: Parser a -> Parser a
 braces = between (symbol "{") (symbol "}")
 
 -- | Parse with the first parser multiple times, separated by the second parser.
+--
+-- > parse (identifier `sepBy` (char '|')) "foo|bar|baz"
+--
+-- Or, if you would like to ignore whitespace after the separator
+--
+-- > parse (identifier `sepBy` (symbol "|") "foo | bar | baz")
 sepBy :: Parser a -> Parser b -> Parser [a]
 p `sepBy` q = atLeastOne p <|> pure []
   where atLeastOne p' = (:) <$> p' <*> (q *> atLeastOne p' <|> pure [])
 
--- | Parse multiple times with the given parser,
--- separated by commas.
-commaSep, list, tuple :: Parser a -> Parser [a]
+-- | Parse multiple times with the given parser, separated by commas.
+--
+-- > parse (commaSep intLit) "13,1,5,12"
+commaSep :: Parser a -> Parser [a]
 commaSep p = p `sepBy` symbol ","
+
+-- | Parse multiple times with a given parser, separated by commas, and surrounded by brackets.
+-- 
+-- > parse (list intLit) "[123,5,1]"
+list :: Parser a -> Parser [a]
 list p = brackets $ commaSep p
+
+-- | Parse multiple times with a given parser, separated by commas, and surrounded by parentheses.
+-- 
+-- > parse (tuple identifier) "(foo, bar, baz)"
+tuple :: Parser a -> Parser [a]
 tuple p = parens $ commaSep p
 
--- | Parse a map from the first input to the second.
--- For instance, mapTo identifier intLit would succeed
--- if given the input "{var : 123}"
+-- | With surrounding braces, parse multiple occurences of the first parser, then a colon, then the second parser.
+-- These occurences are separated by commas.
+--
+-- > parse (identifier `mapTo` var) "{abc : 123, xyz : 512}"
 mapTo :: Parser a -> Parser b -> Parser [(a, b)]
 mapTo p q = braces $ commaSep $ (,) <$> p <*> (symbol ":" *> q)

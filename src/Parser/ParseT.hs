@@ -18,11 +18,6 @@ import Control.Monad (void)
 -- but made into its own type to redefine the show instance.
 data Result b a = Err (State b) | Ok (a, State b)
 
--- | Convert the result to a bool
-resultToBool :: Result b a -> Bool
-resultToBool (Ok _) = True
-resultToBool (Err _) = False
-
 -- | Check that the result is as expected.
 err, ok :: Result b a -> Bool
 err (Err _) = True
@@ -79,8 +74,8 @@ instance Alternative (ParseT b) where
 instance Monad (ParseT b) where
   p >>= f = P $ \st ->
     case runParser p st of
-      Err err -> Err err
       Ok (x, st') -> runParser (f x) st'
+      Err e -> Err e
 
 -- | A parser that applies the given function to its state.
 modifyState :: (State b -> State b) -> ParseT b ()

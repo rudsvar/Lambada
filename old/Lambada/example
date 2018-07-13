@@ -1,4 +1,0 @@
-// Factorials again
-
-fac = \x -> if (eq x 0) then 1 else fac (add x (-1))
-fac 5

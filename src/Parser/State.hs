@@ -54,8 +54,6 @@ data ParseError a = ParseError {
   expected :: [Label]
 }
 
--- newtype ParseError a = ParseError (Label, a, Loc)
-
 instance Show a => Show (ParseError a) where
   show pe
     | show (actual pe) == "\"\""
@@ -97,11 +95,13 @@ labelState l st = st {
        in old { expected = l : expected old }
   }
 
+-- | Clear the expected list
 clearExpected :: State a -> State a
 clearExpected st = st {
     parseError = (parseError st) { expected = [] }
   }
 
+-- | Update the remaining input in the error
 updateError :: State a -> State a
 updateError st = st {
     parseError = (parseError st) { actual = inp st }

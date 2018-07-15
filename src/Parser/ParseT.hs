@@ -46,25 +46,18 @@ instance Applicative (ParseT b) where
 instance Alternative (ParseT b) where
   empty = P Err
   p <|> q = P $ \old ->
-
-    -- Reset the consumed status
-    let st = old { consumed = False } in
-
-    -- Parse with the first parser
-    case runParser p st of
+    let st = old { consumed = False } in -- Reset the consumed status
+    case runParser p st of -- Parse with the first parser
       Ok (x, st') -> Ok (x, st') -- Result ok, keep it
       Err e | consumed e -> Err e -- Input was consumed, keep the error
       Err e ->
-
-        -- Input was not consumed, try with the other parser
-        case runParser q st of
+        case runParser q st of -- Input was not consumed, try with the other parser
           Ok (x, st') -> Ok (x, st') -- Result ok, keep it
           Err e' | consumed e' -> Err e' -- Input was consumed, keep the error
-          Err e'-> Err $
-
-            -- Input was not consumed, keep both errors
+          Err e'-> Err $ -- Input was not consumed, keep both errors
             e' { parseError = (parseError e') { expected = prev ++ curr } }
             where
+              -- Previous and current errors
               prev = expected $ parseError e
               curr = expected $ parseError e'
 

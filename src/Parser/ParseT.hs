@@ -46,17 +46,27 @@ instance Applicative (ParseT b) where
 instance Alternative (ParseT b) where
   empty = P Err
   p <|> q = P $ \old ->
+
+    -- Reset the consumed status
     let st = old { consumed = False } in
+
+    -- Parse with the first parser
     case runParser p st of
-      Ok (x, st') -> Ok (x, st')
-      Err e | consumed e -> Err e
+      Ok (x, st') -> Ok (x, st') -- Result ok, keep it
+      Err e | consumed e -> Err e -- Input was consumed, keep the error
       Err e ->
+
+        -- Input was not consumed, try with the other parser
         case runParser q st of
-          Ok (x, st') -> Ok (x, st')
-          Err e' | consumed e' -> Err e'
-          Err e'-> Err $ e' { parseError = (parseError e') { expected = curExpect ++ prevExpect } }
-            where curExpect = expected (parseError e')
-                  prevExpect = expected (parseError e)
+          Ok (x, st') -> Ok (x, st') -- Result ok, keep it
+          Err e' | consumed e' -> Err e' -- Input was consumed, keep the error
+          Err e'-> Err $
+
+            -- Input was not consumed, keep both errors
+            e' { parseError = (parseError e') { expected = prev ++ curr } }
+            where
+              prev = expected $ parseError e
+              curr = expected $ parseError e'
 
 
 -- | The `Monad` instance of the `ParseT`,

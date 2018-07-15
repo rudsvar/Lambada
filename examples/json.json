@@ -1,0 +1,12 @@
+{
+    0 : {
+        "name" : "Rudi",
+        "surname" : "Svartveit",
+        "tlf" : "123"
+    }
+    1 : {
+        "name" : "Irina",
+        "surname" : "Blaha",
+        "tlf" : "321"
+    }
+}

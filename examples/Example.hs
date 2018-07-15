@@ -6,7 +6,7 @@
 
 module Parser.Example where
 
-import Parser.String
+import Parser.Parse
 
 import Data.List
 
@@ -16,14 +16,15 @@ data Obj
   | S String
   | List [Obj]
   | Map [(String, Obj)]
+  deriving Show
 
 parseJson, parseJsonFile :: String -> IO ()
 parseJson = parseTest obj
 parseJsonFile f = readFile f >>= parseJson
 
 -- | Pretty printing
-instance Show Obj where
-  show o = pp 0 4 o
+-- instance Show Obj where
+--   show o = pp 0 4 o
 
 -- | Pretty print an object with the given indentation level
 pp :: Int -> Int -> Obj -> String
@@ -44,7 +45,7 @@ indent i s = replicate i ' ' ++ s
 
 -- | A parser for objects
 obj :: Parser Obj
-obj = Map <$> identifier `mapTo` choice subObj <?> "obj"
+obj = Map <$> strLit `mapTo` choice subObj <?> "obj"
 
 -- | A parser for sub-objects
 subObj :: [Parser Obj]
@@ -58,4 +59,6 @@ objList = List <$> (choice $ map list subObj) <?> "list"
 
 -- |Test
 comment :: Parser ()
-comment = void $ string "/*" >> manyTill item (try $ string "*/")
+comment = char '/' >> lineComment <|> blockComment
+  where blockComment = void $ symbol "*" >> manyTill item (try $ string "*/")
+        lineComment = void $ symbol "/" >> manyTill item (char '\n')

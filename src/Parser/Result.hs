@@ -23,6 +23,6 @@ ok _ = False
 
 -- | The `Show` instance of the `Result`.
 instance (Show b, Show a) => Show (Result b a) where
-  show (Ok (x, st)) = show st ++ show x
-  show (Err e) = show e ++ "Failure"
+  show (Ok (x, st)) = show x
+  show (Err e) = show e
 

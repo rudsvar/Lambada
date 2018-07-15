@@ -10,10 +10,11 @@ import Parser.ParseT
 
 -- | Label a parser for better error messages
 label :: String -> ParseT b a -> ParseT b a
-label s p = P $ \st ->
-  case runParser p (labelState s st) of
-    Ok (x, st') -> Ok (x, st' { errors = errors st })
-    Err e -> Err e
+label s p = P $ \old ->
+  let st = labelState s old in
+  case runParser p st of
+    Ok (x, st') -> Ok (x, st' { parseError = parseError st })
+    Err e -> Err $ e { parseError = parseError st }
 
 -- | The same as `label`, but with the arguments flipped
 (<?>) :: ParseT b a -> String -> ParseT b a
@@ -23,12 +24,12 @@ infixl 0 <?>
 -- | Like label, but do not keep sub-errors,
 -- this can be useful to ignore errors that
 -- are distracting and not useful.
-(<?!>) :: ParseT b a -> String -> ParseT b a
-p <?!> s = P $ \st ->
-  case runParser (p <?> s) st of
-    Err e -> Err $ labelState s (e { errors = errors st })
-    x -> x
-infixl 0 <?!>
+-- (<?!>) :: ParseT b a -> String -> ParseT b a
+-- p <?!> s = P $ \st ->
+--   case runParser (p <?> s) st of
+--     Err e -> Err $ labelState s (e { errors = errors st })
+--     x -> x
+-- infixl 0 <?!>
 
 -- | Get the result of parsing with the input,
 -- but without changing the state.

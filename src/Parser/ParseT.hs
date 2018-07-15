@@ -48,9 +48,16 @@ instance Alternative (ParseT b) where
   p <|> q = P $ \old ->
     let st = old { consumed = False } in
     case runParser p st of
-      Err e | not (consumed e) -> runParser q st
-      Err e -> Err e
-      Ok (x, st') -> Ok (x, st' { errors = errors st })
+      Ok (x, st') -> Ok (x, st')
+      Err e | consumed e -> Err e
+      Err e ->
+        case runParser q st of
+          Ok (x, st') -> Ok (x, st')
+          Err e' | consumed e' -> Err e'
+          Err e'-> Err $ e' { parseError = (parseError e') { expected = curExpect ++ prevExpect } }
+            where curExpect = expected (parseError e')
+                  prevExpect = expected (parseError e)
+
 
 -- | The `Monad` instance of the `ParseT`,
 -- which gives you the `return` function, which is
@@ -60,8 +67,9 @@ instance Alternative (ParseT b) where
 instance Monad (ParseT b) where
   p >>= f = P $ \st ->
     case runParser p st of
-      Ok (x, st') -> runParser (f x) st'
       Err e -> Err e
+      Ok (x, st') ->
+        runParser (f x) $ (updateError . clearExpected) st'
 
 -- | A parser that applies the given function to its state.
 modifyState :: (State b -> State b) -> ParseT b ()

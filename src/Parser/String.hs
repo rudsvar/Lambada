@@ -9,7 +9,7 @@ import Parser.Char
 
 -- | Match a given string.
 string :: String -> Parser String
-string s = string' s <?!> "string " ++ show s
+string s = string' s <?> "string " ++ show s
   where string' = foldr (\x acc -> (:) <$> char x <*> acc) (pure [])
 
 -- | Parse with a parser, then ignore trailing whitespace.
@@ -19,21 +19,21 @@ lexeme p = p <* spaces
 -- | Parse an integer literal that is not followed by a letter.
 intLit :: Parser Integer
 intLit = lexeme (read <$> within) <?> "integer literal"
-  where within = (some digit <?!> "some digits") <* (unexpected letter <?> "no letter after integer literal")
+  where within = (some digit <?> "some digits") <* (unexpected letter <?> "no letter after integer literal")
 
 -- | Parse a string literal.
 strLit :: Parser String
 strLit = lexeme (between (char '"') (char '"') within) <?> "string literal"
-  where within = some (sat (/='"')) <?!> "end of string literal"
+  where within = some (sat (/='"')) <?> "end of string literal"
 
 -- | Parse an identifier.
 identifier :: Parser String
-identifier = lexeme ((:) <$> first <*> many letter) <?!> "identifier"
+identifier = lexeme ((:) <$> first <*> many letter) <?> "identifier"
   where first = letter <|> char '_'
 
 -- | Parse a given string, and skip trailing whitespace.
 symbol :: String -> Parser String
-symbol s = lexeme (string s) <?!> "symbol " ++ show s
+symbol s = lexeme (string s) <?> "symbol " ++ show s
 
 -- | Parse with the given parser, but with surrounding parentheses.
 parens :: Parser a -> Parser a

@@ -15,6 +15,7 @@ import Parser.Result
 
 import Control.Applicative (Alternative, (<|>), empty, many, some)
 import Control.Monad (void)
+import Data.List (nub)
 
 -- | The parser type, which is imply a function
 -- from one state to either a state, or a state
@@ -55,7 +56,7 @@ instance Alternative (ParseT b) where
           Ok (x, st') -> Ok (x, st') -- Result ok, keep it
           Err e' | consumed e' -> Err e' -- Input was consumed, keep the error
           Err e'-> Err $ -- Input was not consumed, keep both errors
-            e' { parseError = (parseError e') { expected = prev ++ curr } }
+            e' { parseError = (parseError e') { expected = nub $ prev ++ curr } }
             where
               -- Previous and current errors
               prev = expected $ parseError e

@@ -10,16 +10,16 @@ module Parser.State (
   incCol, incLine, resetCol, clearExpected, updateError
 ) where
 
-import Data.List (intercalate)
+import           Data.List (intercalate)
 
 -- | The state data type
 -- It keeps track of the remaining input,
 -- the location, whether or not input has
 -- been consumed, and the error stack.
 data State a = State {
-  inp :: a,
-  loc :: Loc,
-  consumed :: Bool,
+  inp        :: a,
+  loc        :: Loc,
+  consumed   :: Bool,
   parseError :: ParseError a
 }
 
@@ -37,7 +37,7 @@ instance Show a => Show (State a) where
 data Loc = Loc {
   file :: String,
   line :: Int,
-  col :: Int
+  col  :: Int
 } deriving Eq
 
 instance Show Loc where
@@ -50,7 +50,7 @@ type Label = String
 -- This is used to generate a trace of what a parser expected, what
 -- the parser got, and where the error occured.
 data ParseError a = ParseError {
-  actual :: a,
+  actual   :: a,
   expected :: [Label]
 }
 

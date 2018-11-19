@@ -6,10 +6,9 @@ module Parser.Char (
   module Parser.Prim
 ) where
 
-import Parser.Prim
-
-import Data.Char (isLetter, isDigit, isAlphaNum, isSpace)
-import Data.Bool (bool)
+import           Control.Monad (mfilter)
+import           Data.Char     (isAlphaNum, isDigit, isLetter, isSpace)
+import           Parser.Prim
 
 -- | The string parser type.
 type Parser a = ParseT String a
@@ -29,7 +28,7 @@ eof = unexpected item <?> "eof"
 
 -- | Parse a character satisfying the predicate.
 sat :: (Char -> Bool) -> Parser Char
-sat p = lookAhead item >>= bool empty item . p
+sat p = mfilter p item
 
 -- | Parse a character satisfying the predicate.
 letter, digit, alphaNum :: Parser Char

@@ -10,11 +10,11 @@ module Parser.ParseT (
   module Control.Monad
 ) where
 
-import Parser.State
-import Parser.Result
+import           Parser.Result
+import           Parser.State
 
-import Control.Applicative (Alternative, (<|>), empty, many, some)
-import Control.Monad (void)
+import           Control.Applicative (Alternative, empty, many, some, (<|>))
+import           Control.Monad       (MonadPlus, void)
 
 -- | The parser type, which is imply a function
 -- from one state to either a state, or a state
@@ -73,6 +73,9 @@ instance Monad (ParseT b) where
       Err e -> Err e
       Ok (x, st') ->
         runParser (f x) $ (updateError . clearExpected) st'
+
+-- Get the default implementation from Alternative
+instance MonadPlus (ParseT b)
 
 -- | A parser that applies the given function to its state.
 modifyState :: (State b -> State b) -> ParseT b ()

@@ -6,7 +6,8 @@ module Parser.Prim (
   module Parser.ParseT
 ) where
 
-import Parser.ParseT
+import           Data.Foldable (asum)
+import           Parser.ParseT
 
 -- | Label a parser for better error messages
 label :: String -> ParseT b a -> ParseT b a
@@ -14,7 +15,7 @@ label s p = P $ \old ->
   let st = labelState s old in
   case runParser p st of
     Ok (x, st') -> Ok (x, st' { parseError = parseError st })
-    Err e -> Err $ e { parseError = parseError st }
+    Err e       -> Err $ e { parseError = parseError st }
 
 -- | The same as `label`, but with the arguments flipped
 (<?>) :: ParseT b a -> String -> ParseT b a
@@ -45,19 +46,19 @@ try :: ParseT b a -> ParseT b a
 try p = P $ \st ->
   case runParser p st of
     Ok (x, st') -> Ok (x, st')
-    Err e -> Err $ e { inp = inp st, consumed = False }
+    Err e       -> Err $ e { inp = inp st, consumed = False }
 
 -- | Parse with the given parsers, and return
 -- the result of the first one to succeed.
 -- Implemented with `<|>`.
 choice :: [ParseT b a] -> ParseT b a
-choice = foldr (<|>) empty
+choice = asum
 
 -- | Fail if the given parser succeeds
 unexpected :: ParseT b a -> ParseT b ()
 unexpected p = P $ \st ->
   case runParser p st of
-    Err _ -> Ok ((), st)
+    Err _       -> Ok ((), st)
     Ok (_, st') -> Err st'
 
 -- | Fail if the first input fails, or the second succeeds.

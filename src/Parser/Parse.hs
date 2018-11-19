@@ -10,7 +10,7 @@ module Parser.Parse (
   module Parser.String
 ) where
 
-import Parser.String
+import           Parser.String
 
 -- | Parse with the parser and return the result.
 parse :: Parser a -> String -> Result String a

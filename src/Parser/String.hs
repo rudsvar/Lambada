@@ -5,7 +5,7 @@ module Parser.String (
   module Parser.Char,
 ) where
 
-import Parser.Char
+import           Parser.Char
 
 -- | Match a given string.
 string :: String -> Parser String
@@ -65,13 +65,13 @@ commaSep :: Parser a -> Parser [a]
 commaSep p = p `sepBy` symbol ","
 
 -- | Parse multiple times with a given parser, separated by commas, and surrounded by brackets.
--- 
+--
 -- > parse (list intLit) "[123,5,1]"
 list :: Parser a -> Parser [a]
 list p = brackets $ commaSep p
 
 -- | Parse multiple times with a given parser, separated by commas, and surrounded by parentheses.
--- 
+--
 -- > parse (tuple identifier) "(foo, bar, baz)"
 tuple :: Parser a -> Parser [a]
 tuple p = parens $ commaSep p

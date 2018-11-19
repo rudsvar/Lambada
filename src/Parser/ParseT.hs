@@ -13,7 +13,8 @@ module Parser.ParseT (
 import           Parser.Result
 import           Parser.State
 
-import           Control.Applicative (Alternative, empty, many, some, (<|>))
+import           Control.Applicative (Alternative, empty, many, optional, some,
+                                      (<|>))
 import           Control.Monad       (MonadPlus, void)
 
 -- | The parser type, which is imply a function
@@ -60,7 +61,6 @@ instance Alternative (ParseT b) where
               -- Previous and current errors
               prev = expected $ parseError e
               curr = expected $ parseError e'
-
 
 -- | The `Monad` instance of the `ParseT`,
 -- which gives you the `return` function, which is

@@ -10,7 +10,7 @@ import           Parser.Char
 -- | Match a given string.
 string :: String -> Parser String
 string s = string' s <?> "string " ++ show s
-  where string' = foldr (\x acc -> (:) <$> char x <*> acc) (pure [])
+  where string' = foldr (\x -> (<*>) ((:) <$> char x)) (pure [])
 
 -- | Parse with a parser, then ignore trailing whitespace.
 lexeme :: Parser a -> Parser a

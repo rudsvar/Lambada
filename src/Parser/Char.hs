@@ -22,7 +22,7 @@ item = label "item" $ P $ \st ->
     (x:xs) -> Ok (x, incCol $ st { inp = xs, consumed = True })
     [] -> Err st
 
--- | Succeed if this is the end input.
+-- | Succeed if this is the end of input.
 eof :: Parser ()
 eof = unexpected item <?> "eof"
 

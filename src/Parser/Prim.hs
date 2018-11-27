@@ -7,6 +7,7 @@ module Parser.Prim (
 ) where
 
 import           Data.Foldable (asum)
+import           Data.Functor  (($>))
 import           Parser.ParseT
 
 -- | Label a parser for better error messages
@@ -22,14 +23,14 @@ label s p = P $ \old ->
 (<?>) = flip label
 infixl 0 <?>
 
--- | Like label, but do not keep sub-errors,
--- this can be useful to ignore errors that
--- are distracting and not useful.
+-- -- | Like label, but do not keep sub-errors,
+-- -- this can be useful to ignore errors that
+-- -- are distracting and not useful.
 -- (<?!>) :: ParseT b a -> String -> ParseT b a
 -- p <?!> s = P $ \st ->
 --   case runParser (p <?> s) st of
 --     Err e -> Err $ labelState s (e { errors = errors st })
---     x -> x
+--     x     -> x
 -- infixl 0 <?!>
 
 -- | Get the result of parsing with the input,
@@ -69,7 +70,7 @@ p `notFollowedBy` q = p <* unexpected q
 -- The result of the second is thrown away.
 -- You can use `lookAhead` if this is undesireable.
 manyTill :: ParseT i a -> ParseT i b -> ParseT i [a]
-manyTill p q = q *> pure [] <|> (:) <$> p <*> manyTill p q
+manyTill p q = q $> [] <|> (:) <$> p <*> manyTill p q
 
 -- | Parse with the first input, then the third, then the second.
 -- Can be used to implement parens and similar parsers.

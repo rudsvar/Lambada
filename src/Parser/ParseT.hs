@@ -57,7 +57,7 @@ instance Alternative (ParseT b) where
           Ok (x, st') -> Ok (x, st') -- Result ok, keep it
           Err e' | consumed e' -> Err e' -- Input was consumed, keep the error
           Err e'-> Err $ -- Input was not consumed, keep both errors
-            e' { parseError = (parseError e') { expected = nub $ prev ++ curr } }
+            e' { parseError = (parseError e') { expected = nub $ curr ++ prev } }
             where
               -- Previous and current errors
               prev = expected $ parseError e

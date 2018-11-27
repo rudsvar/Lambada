@@ -18,7 +18,7 @@ parse p = runParser p . defaultState "<interactive>"
 
 -- | Parse a given string, and print the result.
 parseTest :: Show a => Parser a -> String -> IO ()
-parseTest p = print . parse p
+parseTest p = print . parse (p >> eof)
 
 -- | Parse a file with a given parser.
 parseFile :: Parser a -> FilePath -> IO (Result String a)

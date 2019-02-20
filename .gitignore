@@ -1,6 +1,2 @@
-.stack-work/
-lambada.cabal
-*~
-Session.vim
-.undodir
-
+tags
+build

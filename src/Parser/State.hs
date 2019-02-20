@@ -85,7 +85,7 @@ setCol i st = st { loc = (loc st) { col = i } }
 incLine, incCol, resetCol :: State a -> State a
 incLine st = setLine (line (loc st) + 1) st
 incCol st = setCol (col (loc st) + 1) st
-resetCol st = setCol 0 st
+resetCol = setCol 0
 
 -- | Add an error to the `State` stack with the given label.
 labelState :: Label -> State a -> State a

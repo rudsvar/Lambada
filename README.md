@@ -1,29 +1,25 @@
-# Lambada
-
-## Description
+# Description
 Lambada is a functional language heavily inspired by lambda calculus.
 
 * The language attempts to be minimalistic, and implements as much as possible within the language itself.
 * The syntax is very similar to Haskell, meaning that existing syntax highlighting should work.
+* Documentation can be found [here](./docs/index.html)
 
-## Building
+# Building and executing
 
 With Stack
 ```
 $ stack build
-```
-
-You can then run it with
-```
 $ stack exec lambada-exe
 ```
 
-Or if you don't want to use Stack, you can build the executable with GHC and the makefile
+Or if you don't want to use Stack, you can build the executable with GHC alone
 ```
-$ make
+$ make lambada
+$ ./lambada
 ```
 
-## What does it look like?
+# What does it look like?
 
 Values, lambda expressions, and application.
 
@@ -46,9 +42,9 @@ if not true 1 0
 
 0
 ```
-## Features
+# Features
 
-### Planned features
+## Planned features
 - [x] Values
 - [x] Lambda abstractions
 - [x] Application of lambda abstractions on values
@@ -57,6 +53,12 @@ if not true 1 0
 - [ ] Data types like lists, tuples and records
 - [ ] Type checking
 
-### Ideas
+## Ideas
 * A way of printing values?
 * New data types?
+
+# Todo
+
+* Fix concatenation
+* Fix error messages when using operators
+* Add more tests

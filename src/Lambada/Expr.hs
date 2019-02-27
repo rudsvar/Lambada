@@ -2,8 +2,6 @@ module Lambada.Expr
   ( Expr (..)
   ) where
 
-import Data.List (intercalate)
-
 data Expr
   = EInt Integer
   | EStr String
@@ -25,7 +23,11 @@ instance Num Expr where
   EStr x + EStr y = EStr (x++y)
   x + y = error $ "Can't add" ++ show x ++ " and " ++ show y
   EInt x * EInt y = EInt (x*y)
+  x * y = error $ "Can't multiply" ++ show x ++ " and " ++ show y
   abs (EInt x) = EInt (abs x)
+  abs x = error $ "Can't apply abs to " ++ show x
   negate (EInt x) = EInt (negate x)
+  negate x = error $ "Can't apply negate to " ++ show x
   fromInteger = EInt
   signum (EInt x) = EInt (signum x)
+  signum x = error $ "Can't apply signum to " ++ show x

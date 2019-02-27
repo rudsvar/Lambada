@@ -2,41 +2,44 @@
 
 ## Description
 Lambada is a functional language heavily inspired by lambda calculus.
-The language attempts to be minimalistic, and implements as much as possible within the language itself.
+
+* The language attempts to be minimalistic, and implements as much as possible within the language itself.
+* The syntax is very similar to Haskell, meaning that existing syntax highlighting should work.
 
 ## What should it look like?
 
 Values, lambda expressions, and application.
 
-```
-double = \x . * 2 x
+```haskell
+let double = \x . * 2 x in
+let five = 5 in
+double five
 
-five = 5
-
-main = double five
+5
 ```
 
 Basic boolean logic implementation.
-```
-true = \x . \y . x
-false = \x . \y . y
-if = \p . \x . p x
 
-main = if true 1 0
+```haskell
+let true = \x . \y . x in
+let false = \x . \y . y in
+let not = \p . \x . \y . p y x
+let if = \p . \x . p x in
+if not true 1 0
+
+0
 ```
 ## Features
 
 ### Planned features
-* Values
-* Lambda abstractions
-* Application of lambda abstractions on values
-* Evaluation of expressions
-* Data types like lists, tuples and records
-* Type checking
+- [x] Values
+- [x] Lambda abstractions
+- [x] Application of lambda abstractions on values
+- [x] Let-expressions
+- [x] Evaluation of expressions
+- [ ] Data types like lists, tuples and records
+- [ ] Type checking
 
 ### Ideas
 * A way of printing values?
-* Shift/reset?
-* Try/catch?
 * New data types?
-* Alternative to dot: ->?

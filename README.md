@@ -44,18 +44,19 @@ if not true 1 0
 ```
 # Features
 
-## Planned features
-- [x] Values
-- [x] Lambda abstractions
-- [x] Application of lambda abstractions on values
-- [x] Let-expressions
-- [x] Evaluation of expressions
-- [ ] Data types like lists, tuples and records
-- [ ] Type checking
+The following are already completed.
 
-## Ideas
-* A way of printing values?
-* New data types?
+* Values
+* Lambda abstractions
+* Application of lambda abstractions on values
+* Let-expressions
+* Evaluation of expressions
+
+While these are ideas for the future
+
+* Data types like lists, tuples and records
+* Type checking
+* Printing values
 
 # Todo
 

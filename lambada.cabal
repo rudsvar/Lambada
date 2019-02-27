@@ -1,0 +1,76 @@
+-- This file has been generated from package.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 40d27aeb2348c9c86d3e447d2233dd9b9a083440f2246678eb0034fee16ad1d8
+
+name:           lambada
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/rudsvar/lambada#readme>
+homepage:       https://github.com/rudsvar/lambada#readme
+bug-reports:    https://github.com/rudsvar/lambada/issues
+author:         Rudi B. Svartveit
+maintainer:     rudsvar <at> gmail <dot> com
+copyright:      2018 Rudi B. Svartveit
+license:        GPL3
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/rudsvar/lambada
+
+library
+  exposed-modules:
+      Lambada.Eval
+      Lambada.Expr
+      Lambada.Lambada
+      Lambada.Parser
+      Parser.Char
+      Parser.Parse
+      Parser.ParseT
+      Parser.Prim
+      Parser.Result
+      Parser.State
+      Parser.String
+  other-modules:
+      Paths_lambada
+  hs-source-dirs:
+      src
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , containers
+  default-language: Haskell2010
+
+executable lambada-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_lambada
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , containers
+    , lambada
+  default-language: Haskell2010
+
+test-suite lambada-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_lambada
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      QuickCheck
+    , base >=4.7 && <5
+    , containers
+    , lambada
+  default-language: Haskell2010

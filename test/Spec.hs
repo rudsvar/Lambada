@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-import Parser.String
+import Parser.Parse
 
 import Test.QuickCheck
 import Test.QuickCheck.All

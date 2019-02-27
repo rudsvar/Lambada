@@ -2,8 +2,8 @@
 -- See Hoogle, http://www.haskell.org/hoogle/
 
 
--- | Please see the README on GitHub at
---   <a>https://github.com/rudsvar/lambada#readme</a>
+-- | For more information check out
+--   <a>https://rudsvar.github.io/lambada</a>
 @package lambada
 @version 0.1.0.0
 

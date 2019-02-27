@@ -2,11 +2,11 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 40d27aeb2348c9c86d3e447d2233dd9b9a083440f2246678eb0034fee16ad1d8
+-- hash: e7f7f902b86d3c82409b2288e253033a1866cad44042b2b1310ac52179547306
 
 name:           lambada
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/rudsvar/lambada#readme>
+description:    For more information check out <https://rudsvar.github.io/lambada>
 homepage:       https://github.com/rudsvar/lambada#readme
 bug-reports:    https://github.com/rudsvar/lambada/issues
 author:         Rudi B. Svartveit

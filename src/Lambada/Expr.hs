@@ -12,6 +12,7 @@ data Expr
   | Let String Expr Expr -- ^ Let-expression
   | Abs String Expr -- ^ Lambda abstraction
   | App Expr [Expr] -- ^ Function application
+  deriving Eq
 
 instance Show Expr where
   show (EInt i) = show i

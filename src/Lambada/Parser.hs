@@ -75,6 +75,4 @@ app = label "application" $ do
              <|> (EStr <$> strLit)
              <|> var
              <|> parens expr
-  case args of
-    [] -> return f
-    xs -> return $ f `App` xs
+  return $ App f args

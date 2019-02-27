@@ -26,20 +26,22 @@ eval ctx (Var v)  =
     Just x -> return x
 eval ctx (Let s e1 e2) = eval (M.insert s e1 ctx) e2
 
--- Abs
-eval  _  (Abs s e) = return $ Abs s e
-
 -- Builtin functions
 eval ctx (App (Var "+") xs) = foldr (liftA2 (+) . eval ctx) (pure (EInt 0)) xs
 eval ctx (App (Var "*") xs) = foldr (liftA2 (*) . eval ctx) (pure (EInt 1)) xs
 eval ctx (App (Var "-") [x]) = negate <$> eval ctx x
+eval ctx (App (Var "eq") (x:xs)) =
+  if all (==x) xs
+     then return (Var "true")
+     else return (Var "false")
+
+-- Abs
+eval  _  (Abs s e) = return $ Abs s e
 
 -- App
-eval ctx (App (Var x) []) = eval ctx (Var x)
-eval ctx (App (Var f) xs) = do
-  f' <- eval ctx (Var f)
-  eval ctx (App f' xs)
-eval ctx (App (Abs s e) (x:xs)) = eval (M.insert s val ctx) (App e xs)
-  where val = either (error "Not in skop") id (eval ctx x)
 eval ctx (App f []) = eval ctx f
-eval _ (App f _) = Left $ show f ++ " is not a function."
+eval ctx (App (Abs s e) (x:xs)) = eval (M.insert s val ctx) (App e xs)
+  where val = either (error "") id (eval ctx x)
+eval ctx (App f xs) = do
+  f' <- eval ctx f
+  eval ctx (App f' xs)

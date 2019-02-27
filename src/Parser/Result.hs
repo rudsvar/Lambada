@@ -28,4 +28,4 @@ instance (Show b, Show a) => Show (Result b a) where
 
 instance Functor (Result b) where
   fmap f (Ok (x, st)) = Ok (f x, st)
-  fmap _ (Err err) = Err err
+  fmap _ (Err e) = Err e

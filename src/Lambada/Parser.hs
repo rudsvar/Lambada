@@ -1,3 +1,5 @@
+-- | The parser module for Lambada
+
 module Lambada.Parser
   ( lambada
   , Result (..)
@@ -8,27 +10,32 @@ import Prelude hiding (abs)
 import Lambada.Expr
 import Parser.Parse
 
+-- | Parse a Lambada string
 lambada :: Parser Expr
 lambada = expr <* eof
 
+-- | A collection of information about a language
 data LangInfo = LangInfo
   { keywords :: [String]
   , operators :: [String]
   }
 
+-- | Language information for Lambada
 lambadaInfo :: LangInfo
 lambadaInfo = LangInfo
   { keywords = ["let", "in"]
   , operators = [ "+", "-", "*", "/" ]
   }
 
+-- | Parses a keyword as a lexeme
 keyword :: String -> Parser ()
 keyword k = void $ lexeme (string k)
 
+-- | Parse one of the operators
 operator :: Parser String
 operator = choice $ map (lexeme . string) (operators lambadaInfo)
 
--- | A top level parser
+-- | Parse an expression
 expr :: Parser Expr
 expr = (EInt <$> intLit)
    <|> (EStr <$> strLit)
@@ -37,6 +44,7 @@ expr = (EInt <$> intLit)
    <|> var
    <|> parens expr
 
+-- | Parse a let-expression
 letExpr :: Parser Expr
 letExpr = label "let-expr" $ do
   i <- keyword "let" >> identifier
@@ -44,12 +52,14 @@ letExpr = label "let-expr" $ do
   e2 <- keyword "in" >> expr
   return $ Let i e1 e2
 
+-- | Parse a variable
 var :: Parser Expr
 var = label "var" $ do
   i <- lexeme $ some alphaNum <|> operator
   if i `elem` keywords lambadaInfo
      then empty else return (Var i)
 
+-- | Parse a lambda abstraction
 abs :: Parser Expr
 abs = var <|> do
   void $ symbol "\\"
@@ -57,6 +67,7 @@ abs = var <|> do
   void $ symbol "."
   Abs i <$> expr
 
+-- | Parse an application
 app :: Parser Expr
 app = label "application" $ do
   f <- abs <|> parens abs <|> var

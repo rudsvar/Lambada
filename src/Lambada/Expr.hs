@@ -1,14 +1,17 @@
+-- | A module that defines Lambada expressions
+
 module Lambada.Expr
   ( Expr (..)
   ) where
 
+-- | The expression data type
 data Expr
-  = EInt Integer
-  | EStr String
-  | Var String
-  | Let String Expr Expr
-  | Abs String Expr
-  | App Expr [Expr]
+  = EInt Integer -- ^ Integer
+  | EStr String -- ^ String
+  | Var String -- ^ Variable
+  | Let String Expr Expr -- ^ Let-expression
+  | Abs String Expr -- ^ Lambda abstraction
+  | App Expr [Expr] -- ^ Function application
 
 instance Show Expr where
   show (EInt i) = show i

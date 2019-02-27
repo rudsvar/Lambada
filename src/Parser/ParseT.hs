@@ -10,13 +10,12 @@ module Parser.ParseT (
   module Control.Monad
 ) where
 
-import           Parser.Result
-import           Parser.State
+import Parser.Result
+import Parser.State
 
-import           Control.Applicative (Alternative, empty, many, optional, some,
-                                      (<|>))
-import           Control.Monad       (MonadPlus, void)
-import           Data.List           (nub)
+import Control.Applicative (Alternative, empty, many, optional, some, (<|>))
+import Control.Monad       (MonadPlus, void)
+import Data.List           (nub)
 
 -- | The parser type, which is imply a function
 -- from one state to either a state, or a state

@@ -3,7 +3,7 @@ GHCFLAGS = -Wall -Wextra
 BUILDFLAGS = -i$(SRCDIR) -odir $(BUILDDIR) -hidir $(BUILDDIR)
 BUILDDIR = build
 SRCDIR = src
-MAIN = $(SRCDIR)/Main.hs
+MAIN = app/Main.hs
 
 $(EXE): FORCE
 	ghc $(GHCFLAGS) $(MAIN) $(BUILDFLAGS) -o $@

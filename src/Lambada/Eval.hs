@@ -31,10 +31,6 @@ eval ctx (Let s e1 e2) = eval (M.insert s e1 ctx) e2
 eval ctx (App (Var "+") xs) = foldr (liftA2 (+) . eval ctx) (pure (EInt 0)) xs
 eval ctx (App (Var "*") xs) = foldr (liftA2 (*) . eval ctx) (pure (EInt 1)) xs
 eval ctx (App (Var "-") [x]) = negate <$> eval ctx x
-eval ctx (App (Var "eq") (x:xs)) =
-  if all (==x) xs
-     then return (Abs "x" (Abs "y" (Var "x")))
-     else return (Abs "x" (Abs "y" (Var "y")))
 
 -- Abs
 eval  _  (Abs s e) = return $ Abs s e

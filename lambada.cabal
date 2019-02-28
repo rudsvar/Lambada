@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e7f7f902b86d3c82409b2288e253033a1866cad44042b2b1310ac52179547306
+-- hash: 75bb7fcf41448f65421af8ab790dc4fe59a2768da9362d4de118c11ae1610bf1
 
 name:           lambada
 version:        0.1.0.0
@@ -12,7 +12,7 @@ bug-reports:    https://github.com/rudsvar/lambada/issues
 author:         Rudi B. Svartveit
 maintainer:     rudsvar <at> gmail <dot> com
 copyright:      2018 Rudi B. Svartveit
-license:        GPL3
+license:        GPL-3
 license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10

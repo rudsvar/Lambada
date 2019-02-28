@@ -61,15 +61,15 @@ var = label "var" $ do
 
 -- | Parse a lambda abstraction
 abs :: Parser Expr
-abs = var <|> do
-  void $ symbol "\\"
-  i <- identifier <|> choice (map symbol ["+", "*", "-"])
-  void $ symbol "."
+abs = label "abs" $ var <|> do
+  void $ lexeme $ string "\\"
+  i <- identifier <|> operator
+  void $ lexeme $ string "."
   Abs i <$> expr
 
 -- | Parse an application
 app :: Parser Expr
-app = label "application" $ do
+app = label "app" $ do
   f <- abs <|> parens abs <|> var
   args <- many $ (EInt <$> intLit)
              <|> (EStr <$> strLit)

@@ -5,14 +5,12 @@
 
 module Parser.Result (
   Result (..),
-  err, ok
+  err, ok, result
 ) where
-
-import           Parser.State
 
 -- | The result data type, inspired by `either`,
 -- but made into its own type to redefine the show instance.
-data Result b a = Err (State b) | Ok (a, State b)
+data Result b a = Err b | Ok (a, b)
 
 -- | Check that the result is as expected.
 err, ok :: Result b a -> Bool
@@ -20,6 +18,11 @@ err (Err _) = True
 err _       = False
 ok (Ok _) = True
 ok _      = False
+
+-- | Like `either` for `Either`
+result :: (b -> c) -> ((a, b) -> c) -> Result b a -> c
+result f _ (Err e) = f e
+result _ g (Ok  e) = g e
 
 -- | The `Show` instance of the `Result`.
 instance (Show b, Show a) => Show (Result b a) where

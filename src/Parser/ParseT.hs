@@ -21,7 +21,7 @@ import Data.List           (nub)
 -- from one state to either a state, or a state
 -- along with a result.
 newtype ParseT b a = P {
-  runParser :: State b -> Result b a
+  runParser :: State b -> Result (State b) a
 }
 
 -- | The `Functor` instance of `ParseT`,

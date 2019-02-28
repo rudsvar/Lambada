@@ -1,7 +1,8 @@
 -- | A higher level interface for Lambada
 
 module Lambada.Lambada
-  ( evalLambada
+  ( parseLambada
+  , evalLambada
   , evalLambada'
   , evaluate
   , eval
@@ -13,6 +14,9 @@ module Lambada.Lambada
 import Lambada.Parser
 import Lambada.Eval
 import Parser.Parse
+
+parseLambada :: String -> Result (State String) Expr
+parseLambada = parse lambada
 
 -- | A function that parses and evaluates a given string
 evalLambada :: String -> Either String Expr

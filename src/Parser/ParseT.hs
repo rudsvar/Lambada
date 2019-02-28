@@ -54,7 +54,7 @@ instance Alternative (ParseT b) where
       Err e ->
         case runParser q st of -- Input was not consumed, try with the other parser
           Ok (x, st') -> Ok (x, st') -- Result ok, keep it
-          Err e' | consumed e' -> Err e' -- Input was consumed, keep the error
+          Err e' | consumed e' -> Err e'
           Err e'-> Err $ -- Input was not consumed, keep both errors
             e' { parseError = (parseError e') { expected = nub $ curr ++ prev } }
             where
@@ -72,7 +72,7 @@ instance Monad (ParseT b) where
     case runParser p st of
       Err e -> Err e
       Ok (x, st') ->
-        runParser (f x) $ (updateError . clearExpected) st'
+        runParser (f x) $ (updateError  . clearExpected) st'
 
 -- Get the default implementation from Alternative
 instance MonadPlus (ParseT b)

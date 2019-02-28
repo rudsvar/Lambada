@@ -6,19 +6,18 @@ module Parser.Prim (
   module Parser.ParseT
 ) where
 
-import           Data.Foldable (asum)
-import           Data.Functor  (($>))
-import           Parser.ParseT
+import Data.Foldable (asum)
+import Data.Functor (($>))
+import Parser.ParseT
 
--- | Label a parser for better error messages
+-- | Label a parser for better error messages.
 label :: String -> ParseT b a -> ParseT b a
-label s p = P $ \old ->
-  let st = labelState s old in
+label s p = P $ \st ->
   case runParser p st of
-    Ok (x, st') -> Ok (x, st' { parseError = parseError st })
-    Err e       -> Err $ e { parseError = parseError st }
+    Ok e  -> Ok e
+    Err e -> Err $ labelState s (clearExpected e)
 
--- | The same as `label`, but with the arguments flipped
+-- | The same as `label`, but with the arguments flipped.
 (<?>) :: ParseT b a -> String -> ParseT b a
 (<?>) = flip label
 infixl 0 <?>
@@ -26,11 +25,15 @@ infixl 0 <?>
 -- -- | Like label, but do not keep sub-errors,
 -- -- this can be useful to ignore errors that
 -- -- are distracting and not useful.
+-- label' :: String -> ParseT b a -> ParseT b a
+-- label' s p = P $ \st ->
+--   case runParser p st of
+--     Ok e  -> Ok e
+--     Err e -> Err $ labelState s (clearExpected e)
+
+-- -- | The same as `label'`, but with the arguments flipped.
 -- (<?!>) :: ParseT b a -> String -> ParseT b a
--- p <?!> s = P $ \st ->
---   case runParser (p <?> s) st of
---     Err e -> Err $ labelState s (e { errors = errors st })
---     x     -> x
+-- (<?!>) = flip label'
 -- infixl 0 <?!>
 
 -- | Get the result of parsing with the input,
@@ -42,7 +45,7 @@ lookAhead p = getState >>= (p <*) . setState
 -- | Parse with the input, but pretend
 -- that no input has been consumed
 -- if it fails. This can be used
--- when arbitray lookahead is needed.
+-- when arbitrary lookahead is needed.
 try :: ParseT b a -> ParseT b a
 try p = P $ \st ->
   case runParser p st of

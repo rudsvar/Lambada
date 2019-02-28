@@ -29,7 +29,7 @@ repl ctx = do
   line <- getLine
   case words line of
     (x:"=":xs) ->
-      case evalLambada' ctx (concat xs) of
+      case evalLambada' ctx (unwords xs) of
         Left err -> putStrLn err >> repl ctx
         Right e -> repl (M.insert x e ctx)
     _ ->

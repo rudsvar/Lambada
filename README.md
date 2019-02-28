@@ -62,4 +62,5 @@ While these are ideas for the future
 
 * Fix concatenation
 * Fix error messages when using operators
+* Fix boolean example, alpha conversion needed?
 * Add more tests

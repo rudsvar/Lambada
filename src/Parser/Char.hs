@@ -23,7 +23,7 @@ item = label "item" $ P $ \st ->
 
 -- | Succeed if this is the end of input.
 eof :: Parser ()
-eof = unexpected item <?> "eof"
+eof = unexpected item <?> "end of file"
 
 -- | Parse a character satisfying the predicate.
 sat :: (Char -> Bool) -> Parser Char
@@ -43,5 +43,5 @@ char c = sat (==c) <?> "char " ++ show c
 -- | Skip whitespace, note that this
 -- skips newlines as well.
 space, spaces :: Parser ()
-space = void $ sat isSpace
-spaces = void $ many space
+space = void (sat isSpace) <?> "space"
+spaces = void (many space)

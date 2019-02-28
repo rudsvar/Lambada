@@ -41,7 +41,7 @@ data Loc = Loc {
 } deriving Eq
 
 instance Show Loc where
-  show l = file l ++ ":" ++ show (line l) ++ ":" ++ show (col l)
+  show l = file l ++ ":" ++ show (line l) ++ ":" ++ show (col l) ++ ": error:"
 
 -- | A label used to explain what was expected when the the `ParseError` occured.
 type Label = String

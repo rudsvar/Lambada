@@ -1,7 +1,7 @@
 name:                lambada
 version:             0.1.0.0
 github:              "rudsvar/lambada"
-license:             GPL3
+license:             GPL-3
 author:              "Rudi B. Svartveit"
 maintainer:          "rudsvar <at> gmail <dot> com"
 copyright:           "2018 Rudi B. Svartveit"

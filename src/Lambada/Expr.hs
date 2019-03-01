@@ -19,8 +19,8 @@ instance Show Expr where
   show (EStr s) = show s
   show (EVar s) = s
   show (Let s e1 e2) = "let " ++ s ++ " = " ++ show e1 ++ " in " ++ show e2
-  show (Abs s e) = "\\" ++ s ++ " . " ++ show e ++ ""
-  show (App f es _) = "App (" ++ show f ++ ") " ++ show es
+  show (Abs s e) = "(\\" ++ s ++ " . " ++ show e ++ ")"
+  show (App f es vs) = "App " ++ show f ++ " " ++ show es ++ " " ++ show vs
 
 instance Num Expr where
   EInt x + EInt y = EInt (x+y)

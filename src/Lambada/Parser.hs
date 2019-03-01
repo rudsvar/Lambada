@@ -75,4 +75,4 @@ app :: Parser Expr
 app = do
   f <- abstraction <|> parens abstraction <|> EVar <$> operator <|> var
   args <- many nonApp
-  return $ App f (reverse args) []
+  return $ App f args []

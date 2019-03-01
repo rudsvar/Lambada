@@ -72,7 +72,7 @@ instance Monad (ParseT b) where
     case runParser p st of
       Err e -> Err e
       Ok (x, st') ->
-        runParser (f x) $ (updateError  . clearExpected) st'
+        runParser (f x) $ (updateError . clearExpected) st'
 
 -- Get the default implementation from Alternative
 instance MonadPlus (ParseT b)

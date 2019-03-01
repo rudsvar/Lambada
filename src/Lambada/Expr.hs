@@ -4,8 +4,6 @@ module Lambada.Expr
   ( Expr (..)
   ) where
 
-import qualified Data.Map as M
-
 -- | The expression data type
 data Expr
   = EInt Integer -- ^ Integer

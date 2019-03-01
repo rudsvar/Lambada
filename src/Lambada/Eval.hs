@@ -25,7 +25,7 @@ eval' env e =
 
 -- | A function that evaluates an expression in a given context
 evalWithEnv :: Env -> Expr -> Either String (Expr, Env)
-evalWithEnv env e | trace (show e) False = undefined
+evalWithEnv _    e | trace (show e) False = undefined
 evalWithEnv env (EInt i) = return (EInt i, env)
 evalWithEnv env (EStr s) = return (EStr s, env)
 evalWithEnv env (EVar v) =
@@ -34,7 +34,6 @@ evalWithEnv env (EVar v) =
     Just x -> return (x, env)
 evalWithEnv env (Let s e1 e2) = return (e2, M.insert s e1 env)
 evalWithEnv env (Abs s e) = return (Abs s e, env)
-
 evalWithEnv env (App f [] []) = return (f, env)
 evalWithEnv env (App (Abs s e) [] (y:ys)) = return (App e [] ys, M.insert s y env)
 evalWithEnv env (App f (x:xs) ys) = return (App f xs (y:ys), env)
@@ -42,9 +41,3 @@ evalWithEnv env (App f (x:xs) ys) = return (App f xs (y:ys), env)
 evalWithEnv env (App f xs ys) = do
   (f', env') <- evalWithEnv env f
   return (App f' xs ys, env')
-
--- replaceAll :: String -> Expr -> Expr -> Expr
--- replaceAll x y (EVar s) | s == x = y
--- replaceAll x y (Abs s e) | s != x = Abs s (replaceAll x y e)
--- replaceAll x y (App f e) = App (replaceAll x y f) (replaceAll x y e)
--- replaceAll x y (Let s e1 e2) | s != x = Let s e1 e2

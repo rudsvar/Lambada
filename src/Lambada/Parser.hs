@@ -58,7 +58,7 @@ letExpr = label "let-expr" $ do
 -- | Parse a variable
 var :: Parser Expr
 var = label "var" $ do
-  i <- lexeme $ some alphaNum
+  i <- identifier
   if i `elem` keywords lambadaInfo
      then empty else return (EVar i)
 

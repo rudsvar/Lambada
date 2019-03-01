@@ -17,7 +17,7 @@ data Expr
 instance Show Expr where
   show (EInt i) = show i
   show (EStr s) = show s
-  show (EVar s) = s
+  show (EVar s) = "Var " ++ s
   show (Let s e1 e2) = "let " ++ s ++ " = " ++ show e1 ++ " in " ++ show e2
   show (Abs s e) = "(\\" ++ s ++ " . " ++ show e ++ ")"
   show (App f es vs) = "App " ++ show f ++ " " ++ show es ++ " " ++ show vs

@@ -4,7 +4,7 @@ pkgs.mkShell {
   name = "ghci";
   nativeBuildInputs = [ pkgs.ghc ];
   shellHook = ''
-    ghci -Wall -Wextra src/Main.hs -isrc
+    ghci -Wall -Wextra app/Main.hs -isrc
     exit
   '';
 }

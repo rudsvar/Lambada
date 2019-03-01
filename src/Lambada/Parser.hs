@@ -37,10 +37,14 @@ operator = label "operator" $ choice $ map word (operators lambadaInfo)
 
 -- | Parse an expression
 expr :: Parser Expr
-expr = (EInt <$> intLit)
+expr = app <|> nonApp
+
+-- | Parse anything but application
+nonApp :: Parser Expr
+nonApp = (EInt <$> intLit)
    <|> (EStr <$> strLit)
    <|> letExpr
-   <|> app
+   <|> var
    <|> parens expr
 
 -- | Parse a let-expression
@@ -56,7 +60,7 @@ var :: Parser Expr
 var = label "var" $ do
   i <- lexeme $ some alphaNum
   if i `elem` keywords lambadaInfo
-     then empty else return (Var i)
+     then empty else return (EVar i)
 
 -- | Parse a lambda abstraction
 abstraction :: Parser Expr
@@ -69,9 +73,6 @@ abstraction = do
 -- | Parse an application
 app :: Parser Expr
 app = do
-  f <- abstraction <|> parens abstraction <|> Var <$> operator <|> var
-  args <- label "args" <$> many $ (EInt <$> intLit)
-             <|> (EStr <$> strLit)
-             <|> var
-             <|> parens expr
-  return $ App f args
+  f <- abstraction <|> parens abstraction <|> EVar <$> operator <|> var
+  args <- many nonApp
+  return $ App f (reverse args) []

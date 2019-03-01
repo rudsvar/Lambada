@@ -1,44 +1,50 @@
 -- | A module for evaluating expressions in Lambada
 
 module Lambada.Eval
-  ( evaluate
-  , eval
-  , Ctx
+  ( eval
+  , eval'
+  , Env
   ) where
 
 import Lambada.Expr
 import qualified Data.Map as M
-import Control.Applicative (liftA2)
+import Debug.Trace
 
--- | A data type for storing variables and their values
-type Ctx = M.Map String Expr
+type Env = M.Map String Expr
 
 -- | A function that evaluates an expression
-evaluate :: Expr -> Either String Expr
-evaluate = eval M.empty
+eval :: Expr -> Either String Expr
+eval = eval' M.empty
+
+eval' :: Env -> Expr -> Either String Expr
+eval' env e =
+  case evalWithEnv env e of
+    Left err -> Left err
+    Right (e', _) | e' == e -> Right e
+    Right (e', env') -> eval' env' e'
 
 -- | A function that evaluates an expression in a given context
-eval :: Ctx -> Expr -> Either String Expr
-eval  _  (EInt i) = return $ EInt i
-eval  _  (EStr s) = return $ EStr s
-eval ctx (Var v)  =
-  case M.lookup v ctx of
-    Nothing -> Left $ "Variable " ++ show v ++ " not in scope."
-    Just x -> return x
-eval ctx (Let s e1 e2) = eval (M.insert s e1 ctx) e2
+evalWithEnv :: Env -> Expr -> Either String (Expr, Env)
+evalWithEnv env e | trace (show e) False = undefined
+evalWithEnv env (EInt i) = return (EInt i, env)
+evalWithEnv env (EStr s) = return (EStr s, env)
+evalWithEnv env (EVar v) =
+  case M.lookup v env of
+    Nothing -> Left $ "Not in scope: " ++ show v
+    Just x -> return (x, env)
+evalWithEnv env (Let s e1 e2) = return (e2, M.insert s e1 env)
+evalWithEnv env (Abs s e) = return (Abs s e, env)
 
--- Builtin functions
-eval ctx (App (Var "+") xs) = foldr (liftA2 (+) . eval ctx) (pure (EInt 0)) xs
-eval ctx (App (Var "*") xs) = foldr (liftA2 (*) . eval ctx) (pure (EInt 1)) xs
-eval ctx (App (Var "-") [x]) = negate <$> eval ctx x
+evalWithEnv env (App f [] []) = return (f, env)
+evalWithEnv env (App (Abs s e) [] (y:ys)) = return (App e [] ys, M.insert s y env)
+evalWithEnv env (App f (x:xs) ys) = return (App f xs (y:ys), env)
+  where y = either (error . show) id (eval' env x)
+evalWithEnv env (App f xs ys) = do
+  (f', env') <- evalWithEnv env f
+  return (App f' xs ys, env')
 
--- Abs
-eval  _  (Abs s e) = return $ Abs s e
-
--- App
-eval ctx (App f []) = eval ctx f
-eval ctx (App (Abs s e) (x:xs)) = eval (M.insert s val ctx) (App e xs)
-  where val = either (error "") id (eval ctx x)
-eval ctx (App f xs) = do
-  f' <- eval ctx f
-  eval ctx (App f' xs)
+-- replaceAll :: String -> Expr -> Expr -> Expr
+-- replaceAll x y (EVar s) | s == x = y
+-- replaceAll x y (Abs s e) | s != x = Abs s (replaceAll x y e)
+-- replaceAll x y (App f e) = App (replaceAll x y f) (replaceAll x y e)
+-- replaceAll x y (Let s e1 e2) | s != x = Let s e1 e2

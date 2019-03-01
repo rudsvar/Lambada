@@ -4,23 +4,25 @@ module Lambada.Expr
   ( Expr (..)
   ) where
 
+import qualified Data.Map as M
+
 -- | The expression data type
 data Expr
   = EInt Integer -- ^ Integer
   | EStr String -- ^ String
-  | Var String -- ^ Variable
+  | EVar String -- ^ Variable
   | Let String Expr Expr -- ^ Let-expression
   | Abs String Expr -- ^ Lambda abstraction
-  | App Expr [Expr] -- ^ Function application
+  | App Expr [Expr] [Expr] -- ^ Function application
   deriving Eq
 
 instance Show Expr where
   show (EInt i) = show i
   show (EStr s) = show s
-  show (Var s) = s
+  show (EVar s) = s
   show (Let s e1 e2) = "let " ++ s ++ " = " ++ show e1 ++ " in " ++ show e2
-  show (Abs s e) = "(\\" ++ s ++ " . " ++ show e ++ ")"
-  show (App e es) = unwords (map show (e:es))
+  show (Abs s e) = "\\" ++ s ++ " . " ++ show e ++ ""
+  show (App f es _) = "App (" ++ show f ++ ") " ++ show es
 
 instance Num Expr where
   EInt x + EInt y = EInt (x+y)

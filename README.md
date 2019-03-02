@@ -60,6 +60,5 @@ While these are ideas for the future
 
 # Todo
 
-* Fix concatenation
 * Fix error messages when using operators
 * Add more tests

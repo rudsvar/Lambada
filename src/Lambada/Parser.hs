@@ -9,7 +9,6 @@ module Lambada.Parser
 import Prelude hiding (abs)
 import Lambada.Expr
 import Parser.Parse
-import Debug.Trace
 
 -- | Parse a Lambada string
 lambada :: Parser Expr

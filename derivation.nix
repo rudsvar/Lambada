@@ -5,6 +5,5 @@ stdenv.mkDerivation rec {
   name = "lambada-${version}";
   src = lib.cleanSource ./.;
   nativeBuildInputs = [ ghc ];
-  buildPhase = "ghc app/Main.hs -isrc -odir build -o lambada";
   installPhase = "mkdir -p $out/bin && cp lambada $out/bin";
 }

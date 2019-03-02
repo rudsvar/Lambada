@@ -23,16 +23,16 @@ main = do
 
 -- | Start the Lambada repl
 repl :: Env -> IO ()
-repl ctx = do
+repl env = do
   putStr "> "
   hFlush stdout
   line <- getLine
   case words line of
     (x:"=":xs) ->
-      case evalLambadaWithEnv ctx (unwords xs) of
-        Left err -> putStrLn err >> repl ctx
-        Right e -> repl (M.insert x e ctx)
+      case evalLambadaWithEnv env (unwords xs) of
+        Left err -> putStrLn err >> repl env
+        Right e -> repl (M.insert x e env)
     _ ->
-      case evalLambadaWithEnv ctx line of
-        Left err -> putStrLn err >> repl ctx
-        Right e -> print e >> repl ctx
+      case evalLambadaWithEnv env line of
+        Left err -> putStrLn err >> repl env
+        Right e -> print e >> repl env

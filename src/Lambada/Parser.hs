@@ -9,6 +9,7 @@ module Lambada.Parser
 import Prelude hiding (abs)
 import Lambada.Expr
 import Parser.Parse
+import Debug.Trace
 
 -- | Parse a Lambada string
 lambada :: Parser Expr
@@ -73,6 +74,8 @@ abstraction = do
 -- | Parse an application
 app :: Parser Expr
 app = do
-  f <- abstraction <|> parens abstraction <|> EVar <$> operator <|> var
+  f <- abstraction <|> parens expr <|> EVar <$> operator <|> var
   args <- many nonApp
-  return $ App f args []
+  case args of
+    [] -> return f
+    _  -> return (App f args [])

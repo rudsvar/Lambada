@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 -- | A module for evaluating expressions in Lambada
 
 module Lambada.Eval
@@ -8,51 +10,61 @@ module Lambada.Eval
 
 import Lambada.Expr
 import qualified Data.Map as M
-import Debug.Trace
+import Data.Function (on)
 
 type Env = M.Map String Expr
 
--- | A function that evaluates an expression
+-- | Evaluate an expression
 eval :: Expr -> Either String Expr
 eval = eval' M.empty
 
+-- | Evaluate an expression in a given environment
 eval' :: Env -> Expr -> Either String Expr
 eval' env e =
-  case evalWithEnv env e of
+  case step env e of
     Left err -> Left err
     Right (e', _) | e' == e -> Right e
-    Right (e', env')
-      | trace (show e ++ " -> " ++ show e') False -> undefined
-      | otherwise -> eval' env' e'
+    Right (e', env') -> eval' env' e'
 
 -- | A function that evaluates an expression in a given context
-evalWithEnv :: Env -> Expr -> Either String (Expr, Env)
-evalWithEnv env (EInt i) = return (EInt i, env)
-evalWithEnv env (EStr s) = return (EStr s, env)
-evalWithEnv env (EVar v) =
+step :: Env -> Expr -> Either String (Expr, Env)
+step env (EInt i) = return (EInt i, env)
+step env (EStr s) = return (EStr s, env)
+step env (EVar v) =
   case M.lookup v env of
     Nothing -> Left $ "Not in scope: " ++ show v
-    Just x -> return (x, env)
-evalWithEnv env (Abs s e) = return (Abs s e, env)
+    Just x  -> return (x, env)
+step env (Abs s e) = return (Abs s e, env)
 
 -- Modify
-evalWithEnv env (Let s e1 e2) = return (e2, M.insert s e1 env)
+step env (Let s e1 e2) = return (e2, M.insert s e1 env)
 
 -- Builtins
-evalWithEnv env (App (EVar "+")  [] xs) | not (null xs) = evalBinOp env (+) xs
-evalWithEnv env (App (EVar "*")  [] xs) | not (null xs) = evalBinOp env (*) xs
+step env (App (EVar "+")  [] [x,y]) = (,env) <$> evalBinOp env "+" (+) [x,y]
+step env (App (EVar "*")  [] [x,y]) = (,env) <$> evalBinOp env "*" (*) [x,y]
+step env (App (EVar "-")  [] [x]) = (,env) <$> evalUnOp env "-" negate [x]
+step env (App (EVar "eq") [] [x,y]) =
+  return $ (, env) $ Abs "x" $ Abs "y" $ EVar $
+    if ((==) `on` eval' env) x y then "x" else "y"
 
 -- App
-evalWithEnv env (App f [] []) = return (f, env)
-evalWithEnv env (App (Abs s e) [] (y:ys)) = return (App e [] ys, M.insert s y env)
-evalWithEnv env (App f (x:xs) ys) = return (App f xs (ys ++ [y]), env)
+step env (App f [] []) = return (f, env)
+step env (App (Abs s e) [] (y:ys)) = return (App e [] ys, M.insert s y env)
+step env (App f (x:xs) ys) = return (App f xs (ys ++ [y]), env)
   where y = either (error . show) id (eval' env x)
-evalWithEnv env (App f xs ys) = do
-  (f', env') <- evalWithEnv env f
+step env (App f xs ys) = do
+  (f', env') <- step env f
   return (App f' xs ys, env')
 
--- | Evaluate a binary operator
-evalBinOp :: Env -> (a -> a -> a) -> [a] -> Either String (a, Env)
-evalBinOp _   _  [ ]    = Left "Operators require operands"
-evalBinOp env _  [x]    = return (x, env)
-evalBinOp env op (x:xs) = (\(x', env') -> (x `op` x', env')) <$> evalBinOp env op xs
+-- | Evaluate a unary operator expression
+evalUnOp :: Env -> String -> (Expr -> Expr) -> [Expr] -> Either String Expr
+evalUnOp env _ op [x] = op <$> eval' env x
+evalUnOp _ s _  _    = Left $ s ++ " requires one operand."
+
+-- | Evaluate a binary operator expression
+evalBinOp :: Env -> String -> (Expr -> Expr -> Expr) -> [Expr] -> Either String Expr
+evalBinOp env _ op [x,y] = do
+  x' <- eval' env x
+  y' <- eval' env y
+  return (x' `op` y')
+evalBinOp _ s _  _    = Left $ s ++ " requires two operands."

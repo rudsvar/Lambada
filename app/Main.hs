@@ -2,9 +2,9 @@
 
 module Main where
 
+import System.Console.Haskeline
 import Lambada.Lambada
 import System.Environment
-import System.IO (hFlush, stdout)
 import qualified Data.Map as M
 
 -- | Evaluate a file or start the repl
@@ -14,7 +14,7 @@ main = do
   case args of
     [] -> do
       putStrLn "Welcome to Lambada!"
-      repl M.empty
+      runInputT defaultSettings (repl M.empty)
     (file:_) -> do
       content <- readFile file
       case evalLambada content of
@@ -22,17 +22,18 @@ main = do
         Right e -> print e
 
 -- | Start the Lambada repl
-repl :: Env -> IO ()
+repl :: Env -> InputT IO ()
 repl env = do
-  putStr "> "
-  hFlush stdout
-  line <- getLine
-  case words line of
-    (x:"=":xs) ->
+  line <- getInputLine "λ "
+  case words <$> line of
+    Nothing -> return ()
+    Just ["q"] -> return ()
+    Just ["quit"] -> return ()
+    Just (x:"=":xs) ->
       case evalLambadaWithEnv env (unwords xs) of
-        Left err -> putStrLn err >> repl env
+        Left err -> outputStrLn err >> repl env
         Right e -> repl (M.insert x e env)
-    _ ->
-      case evalLambadaWithEnv env line of
-        Left err -> putStrLn err >> repl env
-        Right e -> print e >> repl env
+    Just line' ->
+      case evalLambadaWithEnv env (unwords line') of
+        Left err -> outputStrLn err >> repl env
+        Right e -> outputStrLn (show e) >> repl env

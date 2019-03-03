@@ -20,10 +20,10 @@ instance Show Regex where
 
 re, seq, ba, el :: Parser Regex
 re = seq >>= \ast -> do
-  let barThenRe = symbol "|" *> re
+  let barThenRe = word "|" *> re
   Or ast <$> barThenRe <|> pure ast
 seq = ba >>= \ast ->
   Seq ast <$> seq <|> pure ast
 ba = el >>= \ast ->
-  symbol "*" $> Star ast <|> pure ast
+  word "*" $> Star ast <|> pure ast
 el = C <$> alphaNum <|> parens re

@@ -60,5 +60,5 @@ objList = List <$> (choice $ map list subObj) <?> "list"
 -- |Test
 comment :: Parser ()
 comment = char '/' >> lineComment <|> blockComment
-  where blockComment = void $ symbol "*" >> manyTill item (try $ string "*/")
-        lineComment = void $ symbol "/" >> manyTill item (char '\n')
+  where blockComment = void $ word "*" >> manyTill item (try $ string "*/")
+        lineComment = void $ word "/" >> manyTill item (char '\n')

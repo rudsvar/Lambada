@@ -1,6 +1,7 @@
 import Parser.Parse
 
 import Data.List (intercalate)
+import Control.Applicative (liftA2)
 
 data JSON
   = Object [(String, JSON)]
@@ -23,7 +24,7 @@ json = object <|> jlist <|> str <|> int
 
 object :: Parser JSON
 object = Object <$> braces (commaSep tuple)
-  where tuple = liftA2 (,) (identifier <* symbol ":") json
+  where tuple = liftA2 (,) (identifier <* word ":") json
 
 jlist :: Parser JSON
 jlist = List <$> brackets (commaSep json)

@@ -6,7 +6,6 @@ module Lambada.Parser
   , module Lambada.Expr
   ) where
 
-import Prelude hiding (abs)
 import Lambada.Expr
 import Parser.Parse
 
@@ -37,7 +36,7 @@ operator = label "operator" $ choice $ map word (operators lambadaInfo)
 
 -- | Parse an expression
 expr :: Parser Expr
-expr = app <|> nonApp
+expr = application <|> nonApp
 
 -- | Parse anything but application
 nonApp :: Parser Expr
@@ -71,8 +70,8 @@ abstraction = do
   Abs i <$> expr
 
 -- | Parse an application
-app :: Parser Expr
-app = do
+application :: Parser Expr
+application = do
   f <- abstraction <|> parens expr <|> EVar <$> operator <|> var
   args <- many nonApp
   case args of

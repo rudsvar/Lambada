@@ -1,10 +1,8 @@
-cabal-version: 1.12
-
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.28.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d0981a2976f3ff42c7a4c5bb02a11b9bf24446652e5500066b6ffbda5e5d1720
+-- hash: a8a98e766575a5feb9b3154676fd35c71d2314bf47534fd02d5cefbe1f21f520
 
 name:           lambada
 version:        0.1.0.0
@@ -17,6 +15,7 @@ copyright:      2018 Rudi B. Svartveit
 license:        GPL-3
 license-file:   LICENSE
 build-type:     Simple
+cabal-version:  >= 1.10
 extra-source-files:
     README.md
 

@@ -74,7 +74,7 @@ instance Monad (ParseT b) where
       Ok (x, st') ->
         runParser (f x) $ (updateError . clearExpected) st'
 
--- Get the default implementation from Alternative
+-- | Get the default implementation from Alternative
 instance MonadPlus (ParseT b)
 
 -- | A parser that applies the given function to its state.

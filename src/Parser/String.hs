@@ -24,7 +24,7 @@ intLit = lexeme (read <$> within) <?> "integer literal"
 -- | Parse a string literal.
 strLit :: Parser String
 strLit = lexeme (between (char '"') (char '"') within) <?> "string literal"
-  where within = some (sat (/='"')) <?> "end of string literal"
+  where within = many (char '\\' *> item <|> sat (/='"')) <?> "end of string literal"
 
 -- | Parse an identifier.
 identifier :: Parser String

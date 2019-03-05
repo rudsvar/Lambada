@@ -1,11 +1,8 @@
 -- | A higher level interface for Lambada
 
 module Lambada.Lambada
-  ( evalLambada
-  , evalLambadaWithEnv
-  , lambada
-  , parse
-  , Env
+  ( module Lambada.Lambada
+  , Env, emptyEnv, insertEnv, lookupEnv
   , Expr
   ) where
 
@@ -13,16 +10,24 @@ import Lambada.Parser
 import Lambada.Eval
 import Parser.Parse
 
--- | A function that parses and evaluates a given string
-evalLambada :: String -> Either String Expr
-evalLambada str =
-  case parse lambada str of
-    Err e -> Left (show e)
-    Ok (e, _) -> eval e
+-- | Parse and evaluate a given string and print the result.
+evalIO :: String -> IO ()
+evalIO = either putStrLn print . Lambada.Lambada.eval
 
--- | A function that parses and evaluates a given string in a context
-evalLambadaWithEnv :: Env -> String -> Either String Expr
-evalLambadaWithEnv env str =
+-- | Parse and evaluate a given string in an environment and print the result.
+evalIO' :: Env -> String -> IO ()
+evalIO' env = either putStrLn print . Lambada.Lambada.eval' env
+
+-- | Parse and evaluate a given string.
+eval :: String -> Either String Expr
+eval str =
   case parse lambada str of
     Err e -> Left (show e)
-    Ok (e, _) -> eval' env e
+    Ok (e, _) -> Lambada.Eval.eval e
+
+-- | Parse and evaluate a given string in an environment.
+eval' :: Env -> String -> Either String Expr
+eval' env str =
+  case parse lambada str of
+    Err e -> Left (show e)
+    Ok (e, _) -> Lambada.Eval.eval' env e

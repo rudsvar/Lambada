@@ -21,6 +21,7 @@ description:         For more information check out <https://rudsvar.github.io/l
 dependencies:
 - base >= 4.7 && < 5
 - containers
+- directory
 - QuickCheck
 - haskeline
 

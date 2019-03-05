@@ -3,20 +3,18 @@
 -- | A module for evaluating expressions in Lambada
 
 module Lambada.Eval
-  ( eval
+  ( module Types.Env
+  , eval
   , eval'
-  , Env
   ) where
 
 import Lambada.Expr
-import qualified Data.Map as M
 import Data.Function (on)
-
-type Env = M.Map String Expr
+import Types.Env
 
 -- | Evaluate an expression
 eval :: Expr -> Either String Expr
-eval = eval' M.empty
+eval = eval' emptyEnv
 
 -- | Evaluate an expression in a given environment
 eval' :: Env -> Expr -> Either String Expr
@@ -31,13 +29,13 @@ step :: Env -> Expr -> Either String (Expr, Env)
 step env (EInt i) = return (EInt i, env)
 step env (EStr s) = return (EStr s, env)
 step env (EVar v) =
-  case M.lookup v env of
+  case lookupEnv v env of
     Nothing -> Left $ "Not in scope: " ++ show v
     Just x  -> return (x, env)
 step env (Abs s e) = return (Abs s e, env)
 
 -- Modify
-step env (Let s e1 e2) = return (e2, M.insert s e1 env)
+step env (Let s e1 e2) = return (e2, insertEnv s e1 env)
 
 -- Builtins
 step env (App (EVar "+")  [] [x,y]) = (,env) <$> evalBinOp env "+" (+) [x,y]
@@ -49,7 +47,7 @@ step env (App (EVar "eq") [] [x,y]) =
 
 -- App
 step env (App f [] []) = return (f, env)
-step env (App (Abs s e) [] (y:ys)) = return (App e [] ys, M.insert s y env)
+step env (App (Abs s e) [] (y:ys)) = return (App e [] ys, insertEnv s y env)
 step env (App f (x:xs) ys) = return (App f xs (ys ++ [y]), env)
   where y = either (error . show) id (eval' env x)
 step env (App f xs ys) = do

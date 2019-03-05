@@ -28,15 +28,15 @@ lambadaInfo = LangInfo
 
 -- | Parse a word with lookahead
 keyword :: String -> Parser String
-keyword k = try (word k)
+keyword k = try (word k) <?!> "keyword " ++ show k
 
 -- | Parse one of the operators
 operator :: Parser String
-operator = label "operator" $ choice $ map word (operators lambadaInfo)
+operator = choice (map word (operators lambadaInfo)) <?!> "operator"
 
 -- | Parse an expression
 expr :: Parser Expr
-expr = application <|> nonApp
+expr = application <|> nonApp <?> "expr"
 
 -- | Parse anything but application
 nonApp :: Parser Expr
@@ -48,7 +48,7 @@ nonApp = (EInt <$> intLit)
 
 -- | Parse a let-expression
 letExpr :: Parser Expr
-letExpr = label "let-expr" $ do
+letExpr = label "let x = 5 in y" $ do
   i <- keyword "let" >> identifier
   e1 <- keyword "=" >> expr
   e2 <- keyword "in" >> expr

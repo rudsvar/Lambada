@@ -15,26 +15,27 @@ label :: String -> ParseT b a -> ParseT b a
 label s p = P $ \st ->
   case runParser p st of
     Ok e  -> Ok e
-    Err e -> Err $ labelState s (clearExpected e)
+    Err e | consumed e -> Err e
+    Err e -> Err $ labelState s e
 
 -- | The same as `label`, but with the arguments flipped.
 (<?>) :: ParseT b a -> String -> ParseT b a
 (<?>) = flip label
 infixl 0 <?>
 
--- -- | Like label, but do not keep sub-errors,
--- -- this can be useful to ignore errors that
--- -- are distracting and not useful.
--- label' :: String -> ParseT b a -> ParseT b a
--- label' s p = P $ \st ->
---   case runParser p st of
---     Ok e  -> Ok e
---     Err e -> Err $ labelState s (clearExpected e)
+-- | Like label, but do not keep sub-errors,
+-- this can be useful to ignore errors that
+-- are distracting and not useful.
+label' :: String -> ParseT b a -> ParseT b a
+label' s p = P $ \st ->
+  case runParser p st of
+    Ok e  -> Ok e
+    Err e -> Err $ labelState s (clearExpected e)
 
--- -- | The same as `label'`, but with the arguments flipped.
--- (<?!>) :: ParseT b a -> String -> ParseT b a
--- (<?!>) = flip label'
--- infixl 0 <?!>
+-- | The same as `label'`, but with the arguments flipped.
+(<?!>) :: ParseT b a -> String -> ParseT b a
+(<?!>) = flip label'
+infixl 0 <?!>
 
 -- | Get the result of parsing with the input,
 -- but without changing the state.

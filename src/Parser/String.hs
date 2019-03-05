@@ -10,7 +10,7 @@ import           Parser.Char
 -- | Match a given string.
 string :: String -> Parser String
 string [] = pure []
-string s@(x:xs) = char x >> string xs >> return s <?> "string " ++ show s
+string s@(x:xs) = char x >> string xs >> return s <?!> "string " ++ show s
 
 -- | Parse with a parser, then ignore trailing whitespace.
 lexeme :: Parser a -> Parser a
@@ -28,12 +28,12 @@ strLit = lexeme (between (char '"') (char '"') within) <?> "string literal"
 
 -- | Parse an identifier.
 identifier :: Parser String
-identifier = lexeme ((:) <$> first <*> many letter) <?> "identifier"
+identifier = lexeme ((:) <$> first <*> many letter) <?!> "identifier"
   where first = letter <|> char '_'
 
 -- | Parse a given string, and skip trailing whitespace.
 word :: String -> Parser String
-word s = lexeme (string s) <?> "word " ++ show s
+word s = lexeme (string s) <?!> "word " ++ show s
 
 -- | Parse with the given parser, but with surrounding parentheses.
 parens :: Parser a -> Parser a

@@ -52,7 +52,7 @@ instance Alternative (ParseT b) where
       Ok (x, st') -> Ok (x, st') -- Result ok, keep it
       Err e | consumed e -> Err e -- Input was consumed, keep the error
       Err e ->
-        case runParser q st of -- Input was not consumed, try with the other parser
+        case runParser q (updateError st) of -- Input was not consumed, try with the other parser
           Ok (x, st') -> Ok (x, st') -- Result ok, keep it
           Err e' | consumed e' -> Err e'
           Err e'-> Err $ -- Input was not consumed, keep both errors

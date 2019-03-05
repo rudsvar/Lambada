@@ -1,7 +1,7 @@
 # Description
 Lambada is a functional programming language heavily inspired by lambda calculus.
 
-* The language aims to be minimalistic, and implements as much as possible within the language itself.
+* The language aims to be simple, or at least as simple as lambda calculus can be.
 * The syntax is very similar to Haskell, meaning that existing syntax highlighting should work.
 * Documentation can be found [here](docs/index.html)
 

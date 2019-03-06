@@ -12,11 +12,12 @@ import Parser.ParseT
 
 -- | Label a parser for better error messages.
 label :: String -> ParseT b a -> ParseT b a
-label s p = P $ \st ->
+label s p = P $ \old ->
+  let st = old { consumed = False } in
   case runParser p st of
-    Ok (e,st')  -> Ok (e, updateError st')
+    Ok (e,st')  -> Ok (e, (updateError st') { consumed = consumed st' || consumed old })
     -- If sub has not consumed, ignore error
-    Err e | not (consumed e) -> Err (labelState s (clearExpected e))
+    Err e | not (consumed e) -> Err $ (labelState s (clearExpected e)) { consumed = consumed old }
     -- Keep sub-errors if there are any
     Err e | not . null . expected $ parseError e -> Err e
     Err e -> Err $ labelState s e -- Add label

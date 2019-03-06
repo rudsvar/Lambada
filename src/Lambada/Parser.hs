@@ -49,7 +49,7 @@ letOrVar :: Parser Expr
 letOrVar = do
   v <- identifier
   case v of
-    "let" -> label "let-expression" $ do
+    "let" -> do
       i <- identifier
       e1 <- keyword "=" >> expr
       e2 <- keyword "in" >> expr

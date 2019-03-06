@@ -17,10 +17,10 @@ import           Data.List (intercalate)
 -- the location, whether or not input has
 -- been consumed, and the error stack.
 data State a = State {
-  inp        :: a,
+  inp        :: String,
   loc        :: Loc,
   consumed   :: Bool,
-  parseError :: ParseError a
+  parseError :: ParseError
 }
 
 instance Show a => Show (State a) where
@@ -49,23 +49,23 @@ type Label = String
 -- | A data type used to represent an error while parsing.
 -- This is used to generate a trace of what a parser expected, what
 -- the parser got, and where the error occured.
-data ParseError a = ParseError {
-  actual   :: a,
+data ParseError = ParseError {
+  actual   :: String,
   expected :: [Label]
 }
 
-instance Show a => Show (ParseError a) where
+instance Show ParseError where
   show pe
     | show (actual pe) == "\"\""
     = "Unexpected end of input" ++ showExpected
-    | otherwise = "Found: " ++ show (actual pe) ++ showExpected
+    | otherwise = "Found: " ++ head (lines $ actual pe) ++ showExpected
     where
       showExpected
         | length (expected pe) == 1 = "\nExpected: " ++ concat (expected pe)
         | otherwise = "\nExpected: " ++ intercalate ", " (reverse . tail $ expected pe) ++ " or " ++ head (expected pe)
 
 -- | Generates a state with the given filepath and input.
-defaultState :: FilePath -> a -> State a
+defaultState :: FilePath -> String -> State a
 defaultState f i =
   State {
     inp = i,

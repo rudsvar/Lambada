@@ -77,6 +77,7 @@ defaultState f i =
     }
   }
 
+-- | Set the current line or column of the input
 setLine, setCol :: Int -> State a -> State a
 setLine i st = st { loc = (loc st) { line = i } }
 setCol i st = st { loc = (loc st) { col = i } }

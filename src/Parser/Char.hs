@@ -6,8 +6,8 @@ module Parser.Char (
   module Parser.Prim
 ) where
 
-import           Data.Char   (isAlphaNum, isDigit, isLetter, isSpace)
-import           Parser.Prim
+import Data.Char   (isAlphaNum, isDigit, isLetter, isSpace)
+import Parser.Prim
 
 -- | The string parser type.
 type Parser a = ParseT String a
@@ -32,16 +32,16 @@ sat p = lookAhead item >>= \i ->
 
 -- | Parse a character satisfying the predicate.
 letter, digit, alphaNum :: Parser Char
-letter = sat isLetter <?> "letter"
-digit = sat isDigit <?> "digit"
-alphaNum = sat isAlphaNum <?> "alphaNum"
+letter = sat isLetter <?!> "letter"
+digit = sat isDigit <?!> "digit"
+alphaNum = sat isAlphaNum <?!> "alphaNum"
 
 -- | Match the given character.
 char :: Char -> Parser Char
-char c = sat (==c) <?> "char " ++ show c
+char c = sat (==c) <?!> "char " ++ show c
 
 -- | Skip whitespace, note that this
 -- skips newlines as well.
 space, spaces :: Parser ()
-space = void (sat isSpace) <?> "space"
+space = void (sat isSpace) <?!> "space"
 spaces = void (many space)

@@ -19,12 +19,15 @@ lexeme p = p <* spaces
 -- | Parse an integer literal that is not followed by a letter.
 intLit :: Parser Integer
 intLit = lexeme (read <$> within) <?> "integer literal"
-  where within = (some digit <?> "some digits") <* (unexpected letter <?> "no letter after integer literal")
+  where within = (some digit <?!> "some digits") <* (unexpected letter <?!> "no letter after integer literal")
 
 -- | Parse a string literal.
 strLit :: Parser String
-strLit = lexeme (between (char '"') (char '"') within) <?> "string literal"
-  where within = many (char '\\' *> item <|> sat (/='"')) <?> "end of string literal"
+strLit = lexeme $ do
+  _ <- char '"' <?!> "string literal"
+  w <- many (char '\\' *> item <|> sat (/='"'))
+  _ <- char '"' <?!> "end of string literal"
+  return w
 
 -- | Parse an identifier.
 identifier :: Parser String

@@ -36,35 +36,38 @@ operator = choice (map word (operators lambadaInfo)) <?!> "operator"
 
 -- | Parse an expression
 expr :: Parser Expr
-expr = application <|> nonApp <?> "expr"
+expr = application <|> nonApp <?> "expression"
 
 -- | Parse anything but application
 nonApp :: Parser Expr
 nonApp = (EInt <$> intLit)
    <|> (EStr <$> strLit)
-   <|> letExpr
-   <|> var
-   <|> parens expr
+   <|> letOrVar
+   <|> (parens expr <?> "(expr)")
 
--- | Parse a let-expression
-letExpr :: Parser Expr
-letExpr = label "let x = 5 in y" $ do
-  i <- keyword "let" >> identifier
-  e1 <- keyword "=" >> expr
-  e2 <- keyword "in" >> expr
-  return $ Let i e1 e2
+letOrVar :: Parser Expr
+letOrVar = do
+  v <- identifier
+  case v of
+    "let" -> label "let-expression" $ do
+      i <- identifier
+      e1 <- keyword "=" >> expr
+      e2 <- keyword "in" >> expr
+      return $ Let i e1 e2
+    _ | v `notElem` keywords lambadaInfo -> return (EVar v)
+    _ -> empty
 
 -- | Parse a variable
 var :: Parser Expr
-var = label "var" $ do
+var = label' "var" $ do
   i <- identifier
   if i `elem` keywords lambadaInfo
      then empty else return (EVar i)
 
 -- | Parse a lambda abstraction
 abstraction :: Parser Expr
-abstraction = do
-  void $ word "\\"
+abstraction = label "abs" $ do
+  void (word "\\") <?!> "lambda"
   i <- identifier
   void $ word "." <|> word "->"
   Abs i <$> expr
@@ -72,7 +75,7 @@ abstraction = do
 -- | Parse an application
 application :: Parser Expr
 application = do
-  f <- abstraction <|> parens expr <|> EVar <$> operator <|> var
+  f <- abstraction <|> parens expr <|> EVar <$> operator <|> letOrVar
   args <- many nonApp
   case args of
     [] -> return f

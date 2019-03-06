@@ -14,9 +14,12 @@ import Parser.ParseT
 label :: String -> ParseT b a -> ParseT b a
 label s p = P $ \st ->
   case runParser p st of
-    Ok e  -> Ok e
-    Err e | consumed e -> Err e
-    Err e -> Err $ labelState s e
+    Ok (e,st')  -> Ok (e, updateError st')
+    -- If sub has not consumed, ignore error
+    Err e | not (consumed e) -> Err (labelState s (clearExpected e))
+    -- Keep sub-errors if there are any
+    Err e | not . null . expected $ parseError e -> Err e
+    Err e -> Err $ labelState s e -- Add label
 
 -- | The same as `label`, but with the arguments flipped.
 (<?>) :: ParseT b a -> String -> ParseT b a
@@ -29,7 +32,7 @@ infixl 0 <?>
 label' :: String -> ParseT b a -> ParseT b a
 label' s p = P $ \st ->
   case runParser p st of
-    Ok e  -> Ok e
+    Ok (e,st')  -> Ok (e, updateError st')
     Err e -> Err $ labelState s (clearExpected e)
 
 -- | The same as `label'`, but with the arguments flipped.
@@ -51,7 +54,7 @@ try :: ParseT b a -> ParseT b a
 try p = P $ \st ->
   case runParser p st of
     Ok (x, st') -> Ok (x, st')
-    Err e       -> Err $ e { inp = inp st, consumed = False }
+    Err e       -> Err $ e { inp = inp st, consumed = consumed st }
 
 -- | Parse with the given parsers, and return
 -- the result of the first one to succeed.

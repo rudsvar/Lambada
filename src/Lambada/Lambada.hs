@@ -11,17 +11,17 @@ import Lambada.Eval
 import Parser.Parse
 
 -- | Parse and evaluate a given string and print the result.
-evalIO :: String -> IO ()
-evalIO = either putStrLn print . Lambada.Lambada.eval
+evalTest :: String -> IO ()
+evalTest = either putStrLn print . Lambada.Lambada.eval
 
 -- | Parse and evaluate a given string in an environment and print the result.
-evalIO' :: Env -> String -> IO ()
-evalIO' env = either putStrLn print . Lambada.Lambada.eval' env
+evalEnvTest :: Env -> String -> IO ()
+evalEnvTest env = either putStrLn print . Lambada.Lambada.evalEnv env
 
 -- | Parse and evaluate a given string.
 eval :: String -> Either String Expr
 eval str = parse lambada str >>= Lambada.Eval.eval
 
 -- | Parse and evaluate a given string in an environment.
-eval' :: Env -> String -> Either String Expr
-eval' env str = parse lambada str >>= Lambada.Eval.eval' env
+evalEnv :: Env -> String -> Either String Expr
+evalEnv env str = parse lambada str >>= Lambada.Eval.evalEnv env

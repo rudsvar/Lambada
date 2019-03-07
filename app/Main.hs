@@ -42,11 +42,11 @@ checkOpts [] [] = return ()
 checkOpts (Repl:_) _ = runInputT defaultSettings (repl emptyEnv)
 checkOpts (Help:_) _ = putStr $ usageInfo header options
   where header = "Usage: lambada [OPTION...]"
-checkOpts (Stdin:_) _ = evalIO =<< getContents
+checkOpts (Stdin:_) _ = evalTest =<< getContents
 checkOpts (File f:opts) nonOpts = do
-  readFile f >>= evalIO
+  readFile f >>= evalTest
   checkOpts opts nonOpts
-checkOpts (Expr e:opts) nonOpts = evalIO e >> checkOpts opts nonOpts
+checkOpts (Expr e:opts) nonOpts = evalTest e >> checkOpts opts nonOpts
 checkOpts xs (y:ys) = do
   exists <- doesFileExist y
   if exists
@@ -62,10 +62,10 @@ repl env = do
     Just ["q"] -> return ()
     Just ["quit"] -> return ()
     Just (x:"=":xs) ->
-      case eval' env (unwords xs) of
+      case evalEnv env (unwords xs) of
         Left err -> outputStrLn err >> repl env
         Right e -> repl (insertEnv x e env)
     Just line' ->
-      case eval' env (unwords line') of
+      case evalEnv env (unwords line') of
         Left err -> outputStrLn err >> repl env
         Right e -> outputStrLn (show e) >> repl env

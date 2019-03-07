@@ -6,7 +6,10 @@ SRCDIR = src
 MAIN = app/Main.hs
 
 $(EXE): FORCE
-	ghc $(GHCFLAGS) $(MAIN) $(BUILDFLAGS) -o $@
+	ghc $(GHCFLAGS) $(MAIN) $(BUILDFLAGS) -o $(EXE)
+
+release: FORCE
+	ghc $(GHCFLAGS) -O2 $(MAIN) $(BUILDFLAGS) -o $(EXE)
 
 clean:
 	rm -rf $(EXE) $(BUILDDIR)

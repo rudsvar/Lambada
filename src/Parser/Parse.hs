@@ -5,24 +5,30 @@
 -- results directly, giving you an easier time seeing
 -- the results.
 
-module Parser.Parse (
-  module Parser.Parse,
-  module Parser.String
-) where
+module Parser.Parse
+  ( parse, parseTest
+  , parseFile, parseFileTest
+  , module Parser.String
+  ) where
 
-import           Parser.String
+import Parser.String
+import Data.Bifunctor (bimap)
+
+-- | Parse content from a given file
+parse' :: Parser a -> FilePath -> String -> Either String a
+parse' p f = bimap show fst . runParser p . defaultState f
 
 -- | Parse with the parser and return the result.
-parse :: Parser a -> String -> Result (State String) a
-parse p = runParser p . defaultState "<interactive>"
+parse :: Parser a -> String -> Either String a
+parse p = parse' p "<interactive>"
 
 -- | Parse a given string, and print the result.
 parseTest :: Show a => Parser a -> String -> IO ()
-parseTest p = print . parse (p >> eof)
+parseTest p = either putStrLn print . parse (p <* eof)
 
 -- | Parse a file with a given parser.
-parseFile :: Parser a -> FilePath -> IO (Result (State String) a)
-parseFile p f = runParser p . defaultState f <$> readFile f
+parseFile :: Parser a -> FilePath -> IO (Either String a)
+parseFile p f = parse' p f <$> readFile f
 
 -- | Parse a given file, and print the result.
 parseFileTest :: Show a => Parser a -> FilePath -> IO ()

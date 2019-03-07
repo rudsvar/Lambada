@@ -2,7 +2,6 @@
 
 module Lambada.Parser
   ( module Lambada.Parser
-  , Result (..)
   , module Lambada.Expr
   ) where
 

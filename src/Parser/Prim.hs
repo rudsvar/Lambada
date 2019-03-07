@@ -15,12 +15,12 @@ label :: String -> ParseT b a -> ParseT b a
 label s p = P $ \old ->
   let st = old { consumed = False } in
   case runParser p st of
-    Ok (e,st')  -> Ok (e, (updateError st') { consumed = consumed st' || consumed old })
+    Right (e,st')  -> Right (e, (updateError st') { consumed = consumed st' || consumed old })
     -- If sub has not consumed, ignore error
-    Err e | not (consumed e) -> Err $ (labelState s (clearExpected e)) { consumed = consumed old }
+    Left e | not (consumed e) -> Left $ (labelState s (clearExpected e)) { consumed = consumed old }
     -- Keep sub-errors if there are any
-    Err e | not . null . expected $ parseError e -> Err e
-    Err e -> Err $ labelState s e -- Add label
+    Left e | not . null . expected $ parseError e -> Left e
+    Left e -> Left $ labelState s e -- Add label
 
 -- | The same as `label`, but with the arguments flipped.
 (<?>) :: ParseT b a -> String -> ParseT b a
@@ -33,8 +33,8 @@ infixl 0 <?>
 label' :: String -> ParseT b a -> ParseT b a
 label' s p = P $ \st ->
   case runParser p st of
-    Ok (e,st')  -> Ok (e, updateError st')
-    Err e -> Err $ labelState s (clearExpected e)
+    Right (e,st')  -> Right (e, updateError st')
+    Left e -> Left $ labelState s (clearExpected e)
 
 -- | The same as `label'`, but with the arguments flipped.
 (<?!>) :: ParseT b a -> String -> ParseT b a
@@ -54,8 +54,8 @@ lookAhead p = getState >>= (p <*) . setState
 try :: ParseT b a -> ParseT b a
 try p = P $ \st ->
   case runParser p st of
-    Ok (x, st') -> Ok (x, st')
-    Err e       -> Err $ e { inp = inp st, consumed = consumed st }
+    Right (x, st') -> Right (x, st')
+    Left e       -> Left $ e { inp = inp st, consumed = consumed st }
 
 -- | Parse with the given parsers, and return
 -- the result of the first one to succeed.
@@ -67,8 +67,8 @@ choice = asum
 unexpected :: ParseT b a -> ParseT b ()
 unexpected p = P $ \st ->
   case runParser p st of
-    Err _       -> Ok ((), st)
-    Ok (_, st') -> Err st'
+    Left _       -> Right ((), st)
+    Right (_, st') -> Left st'
 
 -- | Fail if the first input fails, or the second succeeds.
 notFollowedBy :: ParseT i a -> ParseT i b -> ParseT i a

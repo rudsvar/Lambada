@@ -17,9 +17,9 @@ type Parser a = ParseT String a
 item :: Parser Char
 item = label "item" $ P $ \st ->
   case inp st of
-    ('\n':xs) -> Ok ('\n', resetCol . incLine $ st { inp = xs, consumed = True })
-    (x:xs) -> Ok (x, incCol $ st { inp = xs, consumed = True })
-    [] -> Err st
+    ('\n':xs) -> Right ('\n', resetCol . incLine $ st { inp = xs, consumed = True })
+    (x:xs) -> Right (x, incCol $ st { inp = xs, consumed = True })
+    [] -> Left st
 
 -- | Succeed if this is the end of input.
 eof :: Parser ()

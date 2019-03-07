@@ -20,14 +20,8 @@ evalIO' env = either putStrLn print . Lambada.Lambada.eval' env
 
 -- | Parse and evaluate a given string.
 eval :: String -> Either String Expr
-eval str =
-  case parse lambada str of
-    Err e -> Left (show e)
-    Ok (e, _) -> Lambada.Eval.eval e
+eval str = parse lambada str >>= Lambada.Eval.eval
 
 -- | Parse and evaluate a given string in an environment.
 eval' :: Env -> String -> Either String Expr
-eval' env str =
-  case parse lambada str of
-    Err e -> Left (show e)
-    Ok (e, _) -> Lambada.Eval.eval' env e
+eval' env str = parse lambada str >>= Lambada.Eval.eval' env

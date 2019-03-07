@@ -5,12 +5,10 @@
 module Parser.ParseT (
   module Parser.ParseT,
   module Parser.State,
-  module Parser.Result,
   module Control.Applicative,
   module Control.Monad
 ) where
 
-import Parser.Result
 import Parser.State
 
 import Control.Applicative (Alternative, empty, many, optional, some, (<|>))
@@ -21,7 +19,7 @@ import Data.List           (nub)
 -- from one state to either a state, or a state
 -- along with a result.
 newtype ParseT b a = P {
-  runParser :: State b -> Result (State b) a
+  runParser :: State b -> Either (State b) (a, State b)
 }
 
 -- | The `Functor` instance of `ParseT`,
@@ -36,7 +34,7 @@ instance Functor (ParseT b) where
 -- lets you get a function as a result from one parser,
 -- and then apply it to the second.
 instance Applicative (ParseT b) where
-  pure x = P $ \st -> Ok (x, st)
+  pure x = P $ \st -> Right (x, st)
   p <*> q = p >>= (<$> q)
 
 -- | The `Alternative` instance of `ParseT`,
@@ -45,17 +43,17 @@ instance Applicative (ParseT b) where
 -- the first argument, and if it fails without consuming
 -- any input, parses with the second.
 instance Alternative (ParseT b) where
-  empty = P Err
+  empty = P Left
   p <|> q = P $ \old ->
     let st = old { consumed = False } in
     case runParser p st of -- Parse with the first parser
-      Ok (x, st') -> Ok (x, st' { consumed = consumed st' || consumed old }) -- Result ok, keep it
-      Err e | consumed e -> Err e -- Input was consumed, keep the error
-      Err e ->
+      Right (x, st') -> Right (x, st' { consumed = consumed st' || consumed old }) -- Result ok, keep it
+      Left e | consumed e -> Left e -- Input was consumed, keep the error
+      Left e ->
         case runParser q st of -- Input was not consumed, try with the other parser
-          Ok (x, st') -> Ok (x, st' { consumed = consumed st' || consumed old }) -- Result ok, keep it
-          Err e' | consumed e' -> Err e'
-          Err e'-> Err $ -- Input was not consumed, keep both errors
+          Right (x, st') -> Right (x, st' { consumed = consumed st' || consumed old }) -- Result ok, keep it
+          Left e' | consumed e' -> Left e'
+          Left e'-> Left $ -- Input was not consumed, keep both errors
             e' { consumed = consumed old, parseError = (parseError e') { expected = nub $ curr ++ prev } }
             where
               -- Previous and current errors
@@ -70,8 +68,8 @@ instance Alternative (ParseT b) where
 instance Monad (ParseT b) where
   p >>= f = P $ \st ->
     case runParser p st of
-      Err e -> Err e
-      Ok (x, st') ->
+      Left e -> Left e
+      Right (x, st') ->
         runParser (f x) st'
 
 -- | Get the default implementation from Alternative
@@ -79,11 +77,11 @@ instance MonadPlus (ParseT b)
 
 -- | A parser that applies the given function to its state.
 modifyState :: (State b -> State b) -> ParseT b ()
-modifyState f = P $ \st -> Ok ((), f st)
+modifyState f = P $ \st -> Right ((), f st)
 
 -- | A parser that returns its state.
 getState :: ParseT b (State b)
-getState = P $ \st -> Ok (st, st)
+getState = P $ \st -> Right (st, st)
 
 -- | A parser that replaces its state with a given one.
 setState :: State b -> ParseT b ()

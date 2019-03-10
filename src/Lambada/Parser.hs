@@ -44,6 +44,7 @@ nonApp = (EInt <$> intLit)
    <|> var <|> letExpr
    <|> parens expr
 
+-- | Parse a let expression
 letExpr :: Parser Expr
 letExpr = label "let-expr" $ do
   void $ keyword "let"

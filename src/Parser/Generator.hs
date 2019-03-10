@@ -33,10 +33,10 @@ data GeneratedParsers a = GeneratedParsers
 -- | Generate parsers using the language information.
 generateParsers :: LangInfo a -> GeneratedParsers a
 generateParsers li = GeneratedParsers
-  { integer = intConstr li <$> intLit
-  , variable = fmap (varConstr li) $ identifier >>= \i ->
+  { integer = intConstr li <$> intLit <?!> "integer"
+  , variable = label' "variable" $ fmap (varConstr li) $ identifier >>= \i ->
       if i `elem` keywords li then empty else pure i
-  , expression = parseLayers (opTable li) (bottomParser li)
+  , expression = parseLayers (opTable li) (bottomParser li) <?> "expression"
   }
 
 -- | Parse the layers of expressions, like expression, term, factor etc.

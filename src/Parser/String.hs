@@ -31,8 +31,8 @@ strLit = lexeme $ do
 
 -- | Parse an identifier.
 identifier :: Parser String
-identifier = lexeme ((:) <$> first <*> many letter) <?!> "identifier"
-  where first = letter <|> char '_'
+identifier = lexeme ((:) <$> first <*> many alphaNum) <?!> "identifier"
+  where first = alpha <|> char '_'
 
 -- | Parse a given string, and skip trailing whitespace.
 word :: String -> Parser String

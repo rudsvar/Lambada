@@ -1,4 +1,4 @@
-module Regex where
+module Examples.Parsing.Regex where
 
 import Prelude hiding (seq)
 import Parser.Parse
@@ -8,8 +8,8 @@ data Regex = Or Regex Regex | Seq Regex Regex | Star Regex | C Char
 
 regex :: String -> Regex
 regex s = case parse re s of
-  Err e -> error $ show e
-  Ok (ast, _) -> ast
+  Left e -> error $ show e
+  Right ast -> ast
 
 instance Show Regex where
   show (Or a (Or b c)) = show a ++ ", " ++ show (Or b c)

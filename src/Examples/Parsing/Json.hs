@@ -1,3 +1,5 @@
+module Examples.Parsing.Json where
+
 import Parser.Parse
 
 import Data.List (intercalate)

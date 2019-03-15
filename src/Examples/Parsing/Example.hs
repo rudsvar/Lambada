@@ -4,7 +4,7 @@
     and the pretty printing of it.
 -}
 
-module Parser.Example where
+module Examples.Parsing.Example where
 
 import Parser.Parse
 

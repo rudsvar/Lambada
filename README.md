@@ -62,3 +62,5 @@ While these are ideas for the future
 
 * Fix error messages when using operators
 * Add more tests
+* No exceptions (evalTest "let negate = \\x . -x in negate x")
+* -e option does not work

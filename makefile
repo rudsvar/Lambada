@@ -5,11 +5,11 @@ BUILDDIR = build
 SRCDIR = src
 MAIN = app/Main.hs
 
-check: FORCE
-	ghc -fno-code $(GHCFLAGS) $(MAIN) $(BUILDFLAGS)
-
 $(EXE): FORCE
 	ghc $(GHCFLAGS) $(MAIN) $(BUILDFLAGS) -o $(EXE)
+
+check: FORCE
+	ghc -fno-code $(GHCFLAGS) $(MAIN) $(BUILDFLAGS)
 
 release: FORCE
 	ghc $(GHCFLAGS) -O2 $(MAIN) $(BUILDFLAGS) -o $(EXE)

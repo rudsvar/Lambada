@@ -22,22 +22,27 @@ data Expr
   | Negate Expr -- ^ Negate an expression
   | I Integer -- ^ An integer type
   | Var String -- ^ A variable
-  deriving Show
+
+instance Show Expr where
+  show (Negate e) = "(-" ++ show e ++ ")"
+  show (Add a b) = show a ++ " + " ++ show b
+  show (Var s) = s
+  show (I i) = show i
 
 -- | Parse expressions
 expr :: Parser Expr
 expr = liftA2 (foldl (&)) term $ many $
-  (word "+" >> flip Add <$> term) <|>
-  (word "-" >> flip Sub <$> term) <|>
-  (word "||" >> flip Or <$> term)
+  (word "+"  >> flip Add <$> term) <|>
+  (word "-"  >> flip Sub <$> term) <|>
+  (word "||" >> flip Or  <$> term)
 
 -- | Parse terms
 term :: Parser Expr
 term = liftA2 (foldl (&)) factor $ many $
-  (word "*" >> flip Mul <$> factor) <|>
-  (word "/" >> flip Div <$> factor) <|>
-  (word "^" >> flip Exp <$> factor) <|>
-  (word "&&" >> flip Div <$> factor)
+  (word "*"  >> flip Mul <$> factor) <|>
+  (word "/"  >> flip Div <$> factor) <|>
+  (word "^"  >> flip Exp <$> factor) <|>
+  (word "&&" >> flip And <$> factor)
 
 -- | Parse factors
 factor :: Parser Expr
@@ -50,7 +55,7 @@ factor =
 
 -- | Parse whitespace or comments
 whiteSpace :: Parser ()
-whiteSpace = spaces <|> lineComment <|> blockComment
+whiteSpace = lineComment <|> blockComment <|> spaces
 
 -- | Parse line comments
 lineComment :: Parser ()

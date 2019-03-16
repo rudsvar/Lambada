@@ -22,7 +22,7 @@ options :: [OptDescr Flag]
 options =
   [ Option ['h'] ["help"]  (NoArg Help)         "Show help"
   , Option ['f'] ["file"]  (ReqArg File "FILE") "Evaluate file"
-  , Option ['e'] ["eval"]  (ReqArg File "EXPR") "Evaluate expression"
+  , Option ['e'] ["eval"]  (ReqArg Expr "EXPR") "Evaluate expression"
   , Option ['r'] ["repl"]  (NoArg Repl)         "Start the REPL"
   , Option ['s'] ["stdin"] (NoArg Stdin)        "Read from stdin"
   ]

@@ -11,6 +11,9 @@ $(EXE): FORCE
 check: FORCE
 	ghc -fno-code $(GHCFLAGS) $(MAIN) $(BUILDFLAGS)
 
+tags: FORCE
+	ghci app/Main.hs -isrc -e ":ctags"
+
 release: FORCE
 	ghc $(GHCFLAGS) -O2 $(MAIN) $(BUILDFLAGS) -o $(EXE)
 

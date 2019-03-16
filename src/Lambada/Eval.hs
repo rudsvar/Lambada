@@ -28,10 +28,7 @@ evalEnv env e =
 step :: Env -> Expr -> Either String (Expr, Env)
 step env (EInt i) = return (EInt i, env)
 step env (EStr s) = return (EStr s, env)
-step env (EVar v) =
-  case lookupEnv v env of
-    Nothing -> Left $ "Not in scope: " ++ show v
-    Just x  -> return (x, env)
+step env (EVar v) = (,env) <$> lookupEnv v env
 step env (Abs s e) = return (Abs s e, env)
 
 -- Modify

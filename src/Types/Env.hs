@@ -22,5 +22,9 @@ insertEnv :: String -> Expr -> Env -> Env
 insertEnv k v (E env) = E $ M.insert k v env
 
 -- | Look up the value of a key in the environment
-lookupEnv :: String -> Env -> Maybe Expr
-lookupEnv k (E env) = M.lookup k env
+lookupEnv :: String -> Env -> Either String Expr
+lookupEnv k (E env) =
+  case M.lookup k env of
+    Nothing -> Left $ "Variable " ++ show k ++ " not in scope."
+    Just x  -> return x
+

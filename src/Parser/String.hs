@@ -25,7 +25,7 @@ intLit = lexeme (read <$> within) <?> "integer literal"
 strLit :: Parser String
 strLit = lexeme $ do
   _ <- char '"' <?!> "string literal"
-  w <- many (char '\\' *> item <|> sat (/='"'))
+  w <- many (char '\\' *> anyChar <|> sat (/='"'))
   _ <- char '"' <?!> "end of string literal"
   return w
 
@@ -35,20 +35,20 @@ identifier = lexeme ((:) <$> first <*> many alphaNum) <?!> "identifier"
   where first = alpha <|> char '_'
 
 -- | Parse a given string, and skip trailing whitespace.
-word :: String -> Parser String
-word s = lexeme (string s) <?!> "word " ++ show s
+symbol :: String -> Parser String
+symbol s = lexeme (string s) <?!> "symbol " ++ show s
 
 -- | Parse with the given parser, but with surrounding parentheses.
 parens :: Parser a -> Parser a
-parens = between (word "(") (word ")")
+parens = between (symbol "(") (symbol ")")
 
 -- | Parse with the given parser, but with surrounding brackets.
 brackets :: Parser a -> Parser a
-brackets = between (word "[") (word "]")
+brackets = between (symbol "[") (symbol "]")
 
 -- | Parse with the given parser, but with surrounding braces.
 braces :: Parser a -> Parser a
-braces = between (word "{") (word "}")
+braces = between (symbol "{") (symbol "}")
 
 -- | Parse with the first parser multiple times, separated by the second parser.
 --
@@ -56,7 +56,7 @@ braces = between (word "{") (word "}")
 --
 -- Or, if you would like to ignore whitespace after the separator
 --
--- > parse (identifier `sepBy` (word "|") "foo | bar | baz")
+-- > parse (identifier `sepBy` (symbol "|") "foo | bar | baz")
 sepBy :: Parser a -> Parser b -> Parser [a]
 p `sepBy` q = atLeastOne p <|> pure []
   where atLeastOne p' = (:) <$> p' <*> (q *> atLeastOne p' <|> pure [])
@@ -65,7 +65,7 @@ p `sepBy` q = atLeastOne p <|> pure []
 --
 -- > parse (commaSep intLit) "13,1,5,12"
 commaSep :: Parser a -> Parser [a]
-commaSep p = p `sepBy` word ","
+commaSep p = p `sepBy` symbol ","
 
 -- | Parse multiple times with a given parser, separated by commas, and surrounded by brackets.
 --
@@ -90,4 +90,4 @@ set p = braces $ commaSep p
 --
 -- > parse (identifier `mapTo` var) "{abc : 123, xyz : 512}"
 mapTo :: Parser a -> Parser b -> Parser [(a, b)]
-mapTo p q = set $ (,) <$> p <*> (word ":" *> q)
+mapTo p q = set $ (,) <$> p <*> (symbol ":" *> q)

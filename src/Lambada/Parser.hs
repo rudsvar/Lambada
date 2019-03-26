@@ -14,24 +14,24 @@ lambada = expr <* eof
 
 -- | A collection of information about a language
 data LangInfo = LangInfo
-  { keywords :: [String]
+  { keysymbols :: [String]
   , operators :: [String]
   }
 
 -- | Language information for Lambada
 lambadaInfo :: LangInfo
 lambadaInfo = LangInfo
-  { keywords = ["let", "in"]
+  { keysymbols = ["let", "in"]
   , operators = [ "+", "-", "*", "/" ]
   }
 
--- | Parse a word with lookahead
-keyword :: String -> Parser String
-keyword k = try (word k) <?!> "keyword " ++ show k
+-- | Parse a symbol with lookahead
+keysymbol :: String -> Parser String
+keysymbol k = try (symbol k) <?!> "keysymbol " ++ show k
 
 -- | Parse one of the operators
 operator :: Parser String
-operator = choice (map word (operators lambadaInfo)) <?!> "operator"
+operator = choice (map symbol (operators lambadaInfo)) <?!> "operator"
 
 -- | Parse an expression
 expr :: Parser Expr
@@ -47,25 +47,25 @@ nonApp = (EInt <$> intLit)
 -- | Parse a let expression
 letExpr :: Parser Expr
 letExpr = label "let-expr" $ do
-  void $ keyword "let"
+  void $ keysymbol "let"
   i <- identifier
-  e1 <- keyword "=" >> expr
-  e2 <- keyword "in" >> expr
+  e1 <- keysymbol "=" >> expr
+  e2 <- keysymbol "in" >> expr
   return $ Let i e1 e2
 
 -- | Parse a variable
 var :: Parser Expr
 var = try $ label' "var" $ do
   i <- identifier
-  if i `elem` keywords lambadaInfo
+  if i `elem` keysymbols lambadaInfo
      then empty else return (EVar i)
 
 -- | Parse a lambda abstraction
 abstraction :: Parser Expr
 abstraction = label "abs" $ do
-  void (word "\\")
+  void (symbol "\\")
   i <- identifier
-  void $ word "." <|> word "->"
+  void $ symbol "." <|> symbol "->"
   Abs i <$> expr
 
 -- | Parse an application

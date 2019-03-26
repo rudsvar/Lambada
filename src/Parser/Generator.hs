@@ -45,7 +45,7 @@ parseLayers [] botParser = botParser
 parseLayers (l:ls) p = do
   let
     nextLayerOps = parseLayers ls p
-    currentLayerOps = flip map l $ \(s, op) -> word s >> flip op <$> nextLayerOps
+    currentLayerOps = flip map l $ \(s, op) -> symbol s >> flip op <$> nextLayerOps
   e <- nextLayerOps
   es <- many $ choice currentLayerOps
   return (foldl (&) e es)

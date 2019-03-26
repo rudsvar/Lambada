@@ -12,10 +12,10 @@ import Parser.Prim
 -- | The string parser type.
 type Parser a = GeneralParser String a
 
--- | Get one item from the string input,
+-- | Get one character from the input,
 -- and update the state accordingly.
-item :: Parser Char
-item = label "item" $ P $ \st ->
+anyChar :: Parser Char
+anyChar = label "anyChar" $ P $ \st ->
   case inp st of
     ('\n':xs) -> Right ('\n', resetCol . incLine $ st { inp = xs, consumed = True })
     (x:xs) -> Right (x, incCol $ st { inp = xs, consumed = True })
@@ -23,12 +23,12 @@ item = label "item" $ P $ \st ->
 
 -- | Succeed if this is the end of input.
 eof :: Parser ()
-eof = unexpected item <?> "end of file"
+eof = unexpected anyChar <?> "end of file"
 
 -- | Parse a character satisfying the predicate.
 sat :: (Char -> Bool) -> Parser Char
-sat p = lookAhead item >>= \i ->
-  if p i then item else empty
+sat p = lookAhead anyChar >>= \i ->
+  if p i then anyChar else empty
 
 -- | Parse a character satisfying the predicate.
 letter, alpha, digit, alphaNum :: Parser Char

@@ -7,6 +7,7 @@ import Data.Char (isDigit, isAlpha)
 
 parserTests :: Spec
 parserTests = do
+
   describe "item" $ do
     it "succeeds when input is non-empty" $
       parse anyChar "x" `shouldBe` Right 'x'
@@ -33,6 +34,6 @@ parserTests = do
     it "fails if end of input is reached" $
       parse (string "abc") "ab" `shouldSatisfy` isLeft
 
-  describe "lexeme" $ do
+  describe "lexeme" $
     it "removes trailing whitespace" $
       parse (string "abc") "abc  def" `shouldBe` Right "abc"

@@ -2,7 +2,7 @@ module ParserTests where
 
 import Test.Hspec
 import Parser.Parse
-import Data.Either (isRight, isLeft)
+import Data.Either (isLeft)
 import Data.Char (isDigit, isAlpha)
 
 parserTests :: Spec

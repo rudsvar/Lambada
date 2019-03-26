@@ -3,7 +3,7 @@ GHCFLAGS = -Wall -Wextra
 BUILDFLAGS = -i$(SRCDIR) -outputdir $(BUILDDIR)
 BUILDDIR = build
 SRCDIR = src
-MAIN = app/Main.hs
+MAIN = app/Main
 
 $(EXE): FORCE
 	ghc $(GHCFLAGS) $(MAIN) $(BUILDFLAGS) -o $@
@@ -16,6 +16,10 @@ tags: FORCE
 
 release: FORCE
 	ghc $(GHCFLAGS) -O2 $(MAIN) $(BUILDFLAGS) -o $(EXE)
+
+test: FORCE
+	ghc $(GHCFLAGS) -itest test/Spec.hs $(BUILDFLAGS) -o $(BUILDDIR)/test
+	$(BUILDDIR)/test
 
 clean:
 	rm -rf $(EXE) $(BUILDDIR)

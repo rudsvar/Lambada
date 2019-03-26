@@ -4,7 +4,6 @@ import Test.Hspec
 
 import Parser.Parse
 import Lambada.Parser
-import Lambada.Expr
 
 isParsedAs :: String -> Expr -> SpecWith (Arg Expectation)
 isParsedAs s e =

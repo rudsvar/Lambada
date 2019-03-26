@@ -1,6 +1,6 @@
 EXE = lambada
 GHCFLAGS = -Wall -Wextra
-BUILDFLAGS = -i$(SRCDIR) -odir $(BUILDDIR) -hidir $(BUILDDIR)
+BUILDFLAGS = -i$(SRCDIR) -outputdir $(BUILDDIR)
 BUILDDIR = build
 SRCDIR = src
 MAIN = app/Main.hs

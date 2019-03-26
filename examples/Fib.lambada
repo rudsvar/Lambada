@@ -1,0 +1,15 @@
+let add = \x . \y . + x y in
+let sub = \x . \y . add x (-y) in
+let fix = \f . (\x . f (x x)) (\x . f (x x)) in
+
+let fac = fix (\fac . \x .
+    (eq x 0) 1 (
+      * x (fac (sub x 1))))
+in
+let
+  fib = fix (\fib . \x .
+    (eq x 0) 0 (
+      (eq x 1) 1 (
+        + (fib (sub x 1)) (fib (sub x 2)))))
+in
+  fib 20

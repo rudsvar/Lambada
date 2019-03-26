@@ -36,30 +36,6 @@ instance GHC.Show.Show Lambada.Expr.Expr
 instance GHC.Num.Num Lambada.Expr.Expr
 
 
--- | A module for the <a>Result</a> data type
---   
---   It is very similar to the <a>Either</a> data type, but with some new
---   functions.
-module Parser.Result
-
--- | The result data type, inspired by <a>either</a>, but made into its own
---   type to redefine the show instance.
-data Result b a
-Err :: b -> Result b a
-Ok :: (a, b) -> Result b a
-
--- | Check that the result is as expected.
-err :: Result b a -> Bool
-
--- | Check that the result is as expected.
-ok :: Result b a -> Bool
-
--- | Like <a>either</a> for <a>Either</a>
-result :: (b -> c) -> ((a, b) -> c) -> Result b a -> c
-instance (GHC.Show.Show b, GHC.Show.Show a) => GHC.Show.Show (Parser.Result.Result b a)
-instance GHC.Base.Functor (Parser.Result.Result b)
-
-
 -- | A module containing the <a>State</a> data type, which is used in
 --   Parser.ParseT to represent the changing state while parsing.
 module Parser.State
@@ -67,19 +43,19 @@ module Parser.State
 -- | The state data type It keeps track of the remaining input, the
 --   location, whether or not input has been consumed, and the error stack.
 data State a
-State :: a -> Loc -> Bool -> ParseError a -> State a
-[inp] :: State a -> a
+State :: String -> Loc -> Bool -> ParseError -> State a
+[inp] :: State a -> String
 [loc] :: State a -> Loc
 [consumed] :: State a -> Bool
-[parseError] :: State a -> ParseError a
+[parseError] :: State a -> ParseError
 
 -- | A data type used to represent an error while parsing. This is used to
 --   generate a trace of what a parser expected, what the parser got, and
 --   where the error occured.
-data ParseError a
-ParseError :: a -> [Label] -> ParseError a
-[actual] :: ParseError a -> a
-[expected] :: ParseError a -> [Label]
+data ParseError
+ParseError :: String -> [Label] -> ParseError
+[actual] :: ParseError -> String
+[expected] :: ParseError -> [Label]
 
 -- | The location data type. This is used to keep track of the location in
 --   the <a>State</a> data type.
@@ -93,7 +69,7 @@ type Label = String
 labelState :: Label -> State a -> State a
 
 -- | Generates a state with the given filepath and input.
-defaultState :: FilePath -> a -> State a
+defaultState :: FilePath -> String -> State a
 
 -- | Function that edits the location of the <a>State</a>
 incCol :: State a -> State a
@@ -111,55 +87,55 @@ clearExpected :: State a -> State a
 updateError :: State a -> State a
 instance GHC.Classes.Eq Parser.State.Loc
 instance GHC.Show.Show a => GHC.Show.Show (Parser.State.State a)
-instance GHC.Show.Show a => GHC.Show.Show (Parser.State.ParseError a)
+instance GHC.Show.Show Parser.State.ParseError
 instance GHC.Show.Show Parser.State.Loc
 
 
 -- | The most general parser type, along with some low level functions used
 --   to manipulate the <a>State</a> of the parser.
-module Parser.ParseT
+module Parser.GeneralParser
 
 -- | The parser type, which is imply a function from one state to either a
 --   state, or a state along with a result.
-newtype ParseT b a
-P :: (State b -> Result (State b) a) -> ParseT b a
-[runParser] :: ParseT b a -> State b -> Result (State b) a
+newtype GeneralParser b a
+P :: (State b -> Either (State b) (a, State b)) -> GeneralParser b a
+[runParser] :: GeneralParser b a -> State b -> Either (State b) (a, State b)
 
--- | The <a>Functor</a> instance of <a>ParseT</a>, letting you apply a
---   function to the result of a given parser.
+-- | The <a>Functor</a> instance of <a>GeneralParser</a>, letting you apply
+--   a function to the result of a given parser.
 
--- | The <a>Applicative</a> instance of <a>ParseT</a>, giving us the
+-- | The <a>Applicative</a> instance of <a>GeneralParser</a>, giving us the
 --   <a>pure</a> function, which always succeeds with the input as the
 --   result, and the <a>&lt;*&gt;</a> operator, which lets you get a
 --   function as a result from one parser, and then apply it to the second.
 
--- | The <a>Alternative</a> instance of <a>ParseT</a>, giving us two
+-- | The <a>Alternative</a> instance of <a>GeneralParser</a>, giving us two
 --   parsers. The first is the <a>empty</a> parser which always fails. The
 --   second is the <a>&lt;|&gt;</a> operator, which first parses with the
 --   first argument, and if it fails without consuming any input, parses
 --   with the second.
 
--- | The <a>Monad</a> instance of the <a>ParseT</a>, which gives you the
---   <a>return</a> function, which is defined equal to <a>pure</a>, and the
---   <a>&gt;&gt;=</a> (bind) operator, which parses with the first input,
---   and sends the result (if it succeeds) to the function that is the
---   second input.
+-- | The <a>Monad</a> instance of the <a>GeneralParser</a>, which gives you
+--   the <a>return</a> function, which is defined equal to <a>pure</a>, and
+--   the <a>&gt;&gt;=</a> (bind) operator, which parses with the first
+--   input, and sends the result (if it succeeds) to the function that is
+--   the second input.
 
 -- | Get the default implementation from Alternative
 
 -- | A parser that applies the given function to its state.
-modifyState :: (State b -> State b) -> ParseT b ()
+modifyState :: (State b -> State b) -> GeneralParser b ()
 
 -- | A parser that returns its state.
-getState :: ParseT b (State b)
+getState :: GeneralParser b (State b)
 
 -- | A parser that replaces its state with a given one.
-setState :: State b -> ParseT b ()
-instance GHC.Base.Functor (Parser.ParseT.ParseT b)
-instance GHC.Base.Applicative (Parser.ParseT.ParseT b)
-instance GHC.Base.Alternative (Parser.ParseT.ParseT b)
-instance GHC.Base.Monad (Parser.ParseT.ParseT b)
-instance GHC.Base.MonadPlus (Parser.ParseT.ParseT b)
+setState :: State b -> GeneralParser b ()
+instance GHC.Base.Functor (Parser.GeneralParser.GeneralParser b)
+instance GHC.Base.Applicative (Parser.GeneralParser.GeneralParser b)
+instance GHC.Base.Alternative (Parser.GeneralParser.GeneralParser b)
+instance GHC.Base.Monad (Parser.GeneralParser.GeneralParser b)
+instance GHC.Base.MonadPlus (Parser.GeneralParser.GeneralParser b)
 
 
 -- | A module defining a few primitive, general parsers. These can be used
@@ -167,38 +143,46 @@ instance GHC.Base.MonadPlus (Parser.ParseT.ParseT b)
 module Parser.Prim
 
 -- | Label a parser for better error messages.
-label :: String -> ParseT b a -> ParseT b a
+label :: String -> GeneralParser b a -> GeneralParser b a
 
 -- | The same as <a>label</a>, but with the arguments flipped.
-(<?>) :: ParseT b a -> String -> ParseT b a
+(<?>) :: GeneralParser b a -> String -> GeneralParser b a
 infixl 0 <?>
+
+-- | Like label, but do not keep sub-errors, this can be useful to ignore
+--   errors that are distracting and not useful.
+label' :: String -> GeneralParser b a -> GeneralParser b a
+
+-- | The same as <a>label'</a>, but with the arguments flipped.
+(<?!>) :: GeneralParser b a -> String -> GeneralParser b a
+infixl 0 <?!>
 
 -- | Get the result of parsing with the input, but without changing the
 --   state. No input is consumed.
-lookAhead :: ParseT b a -> ParseT b a
+lookAhead :: GeneralParser b a -> GeneralParser b a
 
 -- | Parse with the input, but pretend that no input has been consumed if
 --   it fails. This can be used when arbitrary lookahead is needed.
-try :: ParseT b a -> ParseT b a
+try :: GeneralParser b a -> GeneralParser b a
 
 -- | Parse with the given parsers, and return the result of the first one
 --   to succeed. Implemented with <a>&lt;|&gt;</a>.
-choice :: [ParseT b a] -> ParseT b a
+choice :: [GeneralParser b a] -> GeneralParser b a
 
 -- | Fail if the given parser succeeds
-unexpected :: ParseT b a -> ParseT b ()
+unexpected :: GeneralParser b a -> GeneralParser b ()
 
 -- | Fail if the first input fails, or the second succeeds.
-notFollowedBy :: ParseT i a -> ParseT i b -> ParseT i a
+notFollowedBy :: GeneralParser i a -> GeneralParser i b -> GeneralParser i a
 
 -- | Parse with the first parser until the second succeeds. The result of
 --   the second is thrown away. You can use <a>lookAhead</a> if this is
 --   undesireable.
-manyTill :: ParseT i a -> ParseT i b -> ParseT i [a]
+manyTill :: GeneralParser i a -> GeneralParser i b -> GeneralParser i [a]
 
 -- | Parse with the first input, then the third, then the second. Can be
 --   used to implement parens and similar parsers.
-between :: ParseT i a -> ParseT i b -> ParseT i c -> ParseT i c
+between :: GeneralParser i a -> GeneralParser i b -> GeneralParser i c -> GeneralParser i c
 
 
 -- | A module containing the most basic string parsers. These mostly parse
@@ -206,7 +190,7 @@ between :: ParseT i a -> ParseT i b -> ParseT i c -> ParseT i c
 module Parser.Char
 
 -- | The string parser type.
-type Parser a = ParseT String a
+type Parser a = GeneralParser String a
 
 -- | Get one item from the string input, and update the state accordingly.
 item :: Parser Char
@@ -221,6 +205,9 @@ sat :: (Char -> Bool) -> Parser Char
 letter :: Parser Char
 
 -- | Parse a character satisfying the predicate.
+alpha :: Parser Char
+
+-- | Parse a character satisfying the predicate.
 digit :: Parser Char
 
 -- | Parse a character satisfying the predicate.
@@ -228,6 +215,9 @@ alphaNum :: Parser Char
 
 -- | Match the given character.
 char :: Char -> Parser Char
+
+-- | Match the given character.
+notChar :: Char -> Parser Char
 
 -- | Skip whitespace, note that this skips newlines as well.
 space :: Parser ()
@@ -329,16 +319,42 @@ mapTo :: Parser a -> Parser b -> Parser [(a, b)]
 module Parser.Parse
 
 -- | Parse with the parser and return the result.
-parse :: Parser a -> String -> Result (State String) a
+parse :: Parser a -> String -> Either String a
 
 -- | Parse a given string, and print the result.
 parseTest :: Show a => Parser a -> String -> IO ()
 
 -- | Parse a file with a given parser.
-parseFile :: Parser a -> FilePath -> IO (Result (State String) a)
+parseFile :: Parser a -> FilePath -> IO (Either String a)
 
 -- | Parse a given file, and print the result.
 parseFileTest :: Show a => Parser a -> FilePath -> IO ()
+
+
+-- | Automatically generate some parsers for a language.
+module Parser.Generator
+
+-- | A table of operator symbols and their constructors.
+type OpTable a = [[(String, a -> a -> a)]]
+
+-- | Information about the language. Used to generate parsers.
+data LangInfo a
+LangInfo :: OpTable a -> [String] -> (Integer -> a) -> (String -> a) -> Parser a -> LangInfo a
+[opTable] :: LangInfo a -> OpTable a
+[keywords] :: LangInfo a -> [String]
+[intConstr] :: LangInfo a -> Integer -> a
+[varConstr] :: LangInfo a -> String -> a
+[bottomParser] :: LangInfo a -> Parser a
+
+-- | A data type containing the generated parsers.
+data GeneratedParsers a
+GeneratedParsers :: Parser a -> Parser a -> Parser a -> GeneratedParsers a
+[expression] :: GeneratedParsers a -> Parser a
+[integer] :: GeneratedParsers a -> Parser a
+[variable] :: GeneratedParsers a -> Parser a
+
+-- | Generate parsers using the language information.
+generateParsers :: LangInfo a -> GeneratedParsers a
 
 
 -- | The parser module for Lambada
@@ -368,7 +384,7 @@ expr :: Parser Expr
 -- | Parse anything but application
 nonApp :: Parser Expr
 
--- | Parse a let-expression
+-- | Parse a let expression
 letExpr :: Parser Expr
 
 -- | Parse a variable
@@ -379,12 +395,6 @@ abstraction :: Parser Expr
 
 -- | Parse an application
 application :: Parser Expr
-
--- | The result data type, inspired by <a>either</a>, but made into its own
---   type to redefine the show instance.
-data Result b a
-Err :: b -> Result b a
-Ok :: (a, b) -> Result b a
 
 
 -- | An environment type that represents a map of variables and their
@@ -401,7 +411,7 @@ emptyEnv :: Env
 insertEnv :: String -> Expr -> Env -> Env
 
 -- | Look up the value of a key in the environment
-lookupEnv :: String -> Env -> Maybe Expr
+lookupEnv :: String -> Env -> Either String Expr
 
 
 -- | A module for evaluating expressions in Lambada
@@ -411,24 +421,24 @@ module Lambada.Eval
 eval :: Expr -> Either String Expr
 
 -- | Evaluate an expression in a given environment
-eval' :: Env -> Expr -> Either String Expr
+evalWith :: Env -> Expr -> Either String Expr
 
 
 -- | A higher level interface for Lambada
 module Lambada.Lambada
 
 -- | Parse and evaluate a given string and print the result.
-evalIO :: String -> IO ()
+evalLambadaTest :: String -> IO ()
 
 -- | Parse and evaluate a given string in an environment and print the
 --   result.
-evalIO' :: Env -> String -> IO ()
+evalLambadaWithTest :: Env -> String -> IO ()
 
 -- | Parse and evaluate a given string.
-eval :: String -> Either String Expr
+evalLambada :: String -> Either String Expr
 
 -- | Parse and evaluate a given string in an environment.
-eval' :: Env -> String -> Either String Expr
+evalLambadaWith :: Env -> String -> Either String Expr
 
 -- | The environment type
 data Env
@@ -440,7 +450,7 @@ emptyEnv :: Env
 insertEnv :: String -> Expr -> Env -> Env
 
 -- | Look up the value of a key in the environment
-lookupEnv :: String -> Env -> Maybe Expr
+lookupEnv :: String -> Env -> Either String Expr
 
 -- | The expression data type
 data Expr

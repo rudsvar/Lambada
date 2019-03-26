@@ -9,20 +9,12 @@ copyright:           "2018 Rudi B. Svartveit"
 extra-source-files:
 - README.md
 
-# Metadata used when publishing your package
-# synopsis:            Short description of your package
-# category:            Language
-
-# To avoid duplicated efforts in documentation and dealing with the
-# complications of embedding Haddock markup inside cabal files, it is
-# common to point users to the README.md file.
 description:         For more information check out <https://rudsvar.github.io/lambada>
 
 dependencies:
 - base >= 4.7 && < 5
 - containers
 - directory
-- QuickCheck
 - haskeline
 
 library:
@@ -50,3 +42,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - lambada
+    - hspec

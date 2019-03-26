@@ -10,7 +10,7 @@ import Data.Char   (isAlpha, isAlphaNum, isDigit, isLetter, isSpace)
 import Parser.Prim
 
 -- | The string parser type.
-type Parser a = ParseT String a
+type Parser a = GeneralParser String a
 
 -- | Get one item from the string input,
 -- and update the state accordingly.

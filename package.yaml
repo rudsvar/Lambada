@@ -13,12 +13,11 @@ description:         For more information check out <https://rudsvar.github.io/l
 
 dependencies:
 - base >= 4.7 && < 5
-- containers
-- directory
-- haskeline
 
 library:
   source-dirs: src
+  dependencies:
+  - containers
 
 executables:
   lambada-exe:
@@ -31,6 +30,8 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - lambada
+    - haskeline
+    - directory
 
 tests:
   lambada-test:

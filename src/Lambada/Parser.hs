@@ -14,20 +14,20 @@ lambada = expr <* eof
 
 -- | A collection of information about a language
 data LangInfo = LangInfo
-  { keysymbols :: [String]
+  { keySymbols :: [String]
   , operators :: [String]
   }
 
 -- | Language information for Lambada
 lambadaInfo :: LangInfo
 lambadaInfo = LangInfo
-  { keysymbols = ["let", "in"]
+  { keySymbols = ["let", "in"]
   , operators = [ "+", "-", "*", "/" ]
   }
 
 -- | Parse a symbol with lookahead
-keysymbol :: String -> Parser String
-keysymbol k = try (symbol k) <?!> "keysymbol " ++ show k
+keySymbol :: String -> Parser String
+keySymbol k = try (symbol k) <?!> "keySymbol " ++ show k
 
 -- | Parse one of the operators
 operator :: Parser String
@@ -47,10 +47,10 @@ nonApp = (EInt <$> intLit)
 -- | Parse a let expression
 letExpr :: Parser Expr
 letExpr = label "let-expr" $ do
-  void $ keysymbol "let"
+  void $ keySymbol "let"
   i <- identifier
-  e1 <- keysymbol "=" >> expr
-  e2 <- keysymbol "in" >> expr
+  e1 <- keySymbol "=" >> expr
+  e2 <- keySymbol "in" >> expr
   return $ Let i e1 e2
 
 -- | Parse a variable

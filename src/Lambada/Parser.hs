@@ -57,7 +57,7 @@ letExpr = label "let-expr" $ do
 var :: Parser Expr
 var = try $ label' "var" $ do
   i <- identifier
-  if i `elem` keysymbols lambadaInfo
+  if i `elem` keySymbols lambadaInfo
      then empty else return (EVar i)
 
 -- | Parse a lambda abstraction

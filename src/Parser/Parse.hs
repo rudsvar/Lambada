@@ -9,9 +9,11 @@ module Parser.Parse
   ( parse, parseTest
   , parseFile, parseFileTest
   , module Parser.String
+  , module Parser.Expr
   ) where
 
 import Parser.String
+import Parser.Expr
 import Data.Bifunctor (bimap)
 
 -- | Parse content from a given file

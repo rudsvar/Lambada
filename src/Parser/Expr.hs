@@ -6,7 +6,6 @@ module Parser.Expr
 
 import Parser.Char (Parser)
 import Control.Applicative ((<|>))
-import Data.Functor (($>))
 
 -- | A parser for parsing left recursive grammars.
 chainl :: Parser e -> Parser (e -> e -> e) -> Parser e

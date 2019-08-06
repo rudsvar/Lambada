@@ -1,9 +1,11 @@
 EXE = lambada
-GHCFLAGS = -Wall -Wextra
+GHCFLAGS = -Wall -Wextra -j4
 BUILDFLAGS = -i$(SRCDIR) -outputdir $(BUILDDIR)
 BUILDDIR = build
 SRCDIR = src
 MAIN = app/Main
+
+build: $(EXE)
 
 $(EXE): FORCE
 	ghc $(GHCFLAGS) $(MAIN) $(BUILDFLAGS) -o $@
